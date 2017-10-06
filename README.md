@@ -15,7 +15,7 @@ cd build
 cmake ../
 make
 ```
-##Running mapiX
+## Running mapiX
 
 mapiX takes in a text file containing the 3D space point data. The data should be 
 formatted in 3 columns beginning with Run, Subrun, and Event, following by the space points like the following:
