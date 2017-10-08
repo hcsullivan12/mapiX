@@ -33,7 +33,7 @@ PixelCoordinates::PixelCoordinates(const std::string pixelCoordinatesFileName) {
 	pixelRegionHeight    = getJsonMember("pixelRegionHeight", rapidjson::kNumberType).GetDouble();	//cm
 	
 	pixelPitch           = getJsonMember("pixelPitch", rapidjson::kNumberType).GetDouble(); //cm
-	driftSpeed           = getJsonMember("driftSpeed", rapidjson::kNumberType).GetDouble(); //mm/us
+	driftSpeed           = getJsonMember("driftSpeed", rapidjson::kNumberType).GetDouble(); //cm/us
 	digitizationSpeed    = getJsonMember("digitizationSpeed", rapidjson::kNumberType).GetDouble(); //ns/sample
 	nSamples             = getJsonMember("nSamples", rapidjson::kNumberType).GetUint();
 	widthOfPixelPulse    = getJsonMember("widthOfPixelPulse", rapidjson::kNumberType).GetDouble(); 

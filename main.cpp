@@ -7,6 +7,7 @@
 #include "MapToPixels.h"
 #include "TFile.h"
 #include "TH1.h"
+#include "Event.h"
 
 int main(int argc, char** argv) {
 	
@@ -21,6 +22,14 @@ int main(int argc, char** argv) {
 	///Read in the spatial coordinates 
 	EventData inputData(trackFileName);
     inputData.ReadFile();
+    
+    /*auto events = inputData.getEvents();
+    for (auto event : events) {
+		for (auto hit : event.hits) {
+			std::cout << hit.x << std::endl;
+		}
+		std::cout << event.runID << " " << event.subrunID << "  " << event.eventID << std::endl;
+	}*/
 	
 	///Get the the pixel coordinates and parameters
 	PixelCoordinates pixelCoordinates(pixelCoordinatesFileName);
@@ -44,7 +53,7 @@ int main(int argc, char** argv) {
 	///Map the coordinates to the pixels and ROI
 	MapToPixels mapToPixels(inputData, pixelCoordinates, noiseHisto);
 	mapToPixels.map();
-
+/*
 	std::cout << std::endl;
 	std::cout << "PCB side width: " << pixelCoordinates.getPCBSideWidth() << std::endl;
 	std::cout << "Pixel region width: " << pixelCoordinates.getPixelRegionWidth() << std::endl;
@@ -55,6 +64,6 @@ int main(int argc, char** argv) {
 	std::cout << "Number of samples: " << pixelCoordinates.getNSamples() << std::endl;
 	std::cout << "Y limit: " << -1*(pixelCoordinates.getPixelRegionHeight() - pixelCoordinates.getPixelPitch()/2)/pixelCoordinates.getPixelPitch() << std::endl;
 	std::cout << "Z limit: " << (pixelCoordinates.getPixelRegionWidth() - pixelCoordinates.getPixelPitch()/2)/pixelCoordinates.getPixelPitch() <<  std::endl;
-	
+	*/
 }
 

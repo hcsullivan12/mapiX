@@ -77,66 +77,110 @@ struct PrincipalComponents {
         double aveHitDoca;
 };
 
+struct Hit {
+	
+	unsigned channel;
+	
+	double x;
+	
+	double y;
+	
+	double z;
+	
+	double colHitPeakTime;
+	
+	double colHitWidth;
+	
+	double colHitADC;
+	
+	double indHitPeakTime;
+	
+	double indHitWidth;
+	
+	double indHitADC;
+};
+
 struct Event {
-        ///
-        /// Event ID.
-        ///
-        unsigned eventID;
+        
+    ///
+    /// Event ID.
+    ///
+    unsigned eventID;
+        
+    ///
+    /// Run ID.
+    ///
+    unsigned runID;
+        
+    ///
+    /// Subrun ID.
+    ///
+    unsigned subrunID;
+        
+    ///
+    /// Raw Hits
+    ///
+    std::vector<Hit> rawHits;
+        
+    ///
+    /// Map from viper2dHit.firstSample to its index in pixelHits.
+    ///
+    std::multimap<double, Hit> dataHitOrder;
 
-	///
-        /// Map from viper2dHit.firstSample to its index in pixelHits.
-        ///
-        std::multimap<double, std::pair<double, double>> dataHitOrder;
+    ///
+    /// Pixel hits stored at viper2dHit structs.
+    ///
+    std::vector<Hit2d> pixelHits;
 
-        ///
-        /// Pixel hits stored at viper2dHit structs.
-        ///
-        std::vector<Hit2d> pixelHits;
+    ///
+    /// Map from viper2dHit.firstSample to its index in pixelHits.
+    /// (sample, pixelID)
+    std::multimap<double, unsigned> pixelHitOrder;
 
-        ///
-        /// Map from viper2dHit.firstSample to its index in pixelHits.
-        /// (sample, pixelID)
-        std::multimap<double, unsigned> pixelHitOrder;
+    ///
+    /// Map from viper2dHit.lastSample to its index in pixelHits.
+    ///
+    std::multimap<unsigned, unsigned> pixelHitOrderTrail;
 
-        ///
-        /// Map from viper2dHit.lastSample to its index in pixelHits.
-        ///
-        std::multimap<unsigned, unsigned> pixelHitOrderTrail;
+    ///
+    /// ROI hits stored at viper2dHit structs.
+    ///
+    std::vector<Hit2d> roiHits;
 
-        ///
-        /// ROI hits stored at viper2dHit structs.
-        ///
-        std::vector<Hit2d> roiHits;
+    ///
+    /// Map from viper2dHit.firstSample to its index in roiHits.
+    /// (sample, roiID)
+    std::multimap<double, unsigned> roiHitOrder;
 
-        ///
-        /// Map from viper2dHit.firstSample to its index in roiHits.
-        /// (sample, roiID)
-        std::multimap<double, unsigned> roiHitOrder;
+    ///
+    /// Map from viper2dHit.lastSample to its index in roiHits.
+    ///
+    std::multimap<unsigned, unsigned> roiHitOrderTrail;
 
-        ///
-        /// Map from viper2dHit.lastSample to its index in roiHits.
-        ///
-        std::multimap<unsigned, unsigned> roiHitOrderTrail;
+    ///
+    /// Vector of indices of all matched roiHits for each pixelHit entry.
+    ///
+    std::vector<std::vector<unsigned>> pixel2roi;
 
-        ///
-        /// Vector of indices of all matched roiHits for each pixelHit entry.
-        ///
-        std::vector<std::vector<unsigned>> pixel2roi;
+    ///
+    /// Vector of indices of all matched pixelHits for each roiHit entry.
+    ///
+    std::vector<std::vector<unsigned>> roi2pixel;
 
-        ///
-        /// Vector of indices of all matched pixelHits for each roiHit entry.
-        ///
-        std::vector<std::vector<unsigned>> roi2pixel;
+    ///
+    /// viper3dHit candidates generated from pixel2roi and pixelHits.
+    /// Has the same dimensions as pixel2roi.
+    ///
+    std::vector<std::vector<Hit3d>> hitCandidates;
 
-        ///
-        /// viper3dHit candidates generated from pixel2roi and pixelHits.
-        /// Has the same dimensions as pixel2roi.
-        ///
-        std::vector<std::vector<Hit3d>> hitCandidates;
+    std::vector<int> pcaIds;
 
-        std::vector<int> pcaIds;
-
-        PrincipalComponents principalComponents;
+    PrincipalComponents principalComponents;
+        
+        /*///
+        /// Vector holding all track information
+        ///
+        std::vector<Track> tracks;*/
 };
 
 #endif

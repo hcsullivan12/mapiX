@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(mapToPixel)
+project(mapiX)
 
 set(CMAKE_CXX_STANDARD 11)
 
@@ -23,6 +23,6 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 
 file(GLOB_RECURSE sources ${PROJECT_SOURCE_DIR}/src/*.cpp)
 file(GLOB_RECURSE headers ${PROJECT_SOURCE_DIR}/include/*.h)
-add_executable(mapToPixel main.cpp ${sources} ${headers})
+add_executable(mapiX main.cpp ${sources} ${headers})
 
-target_link_libraries(mapToPixel ${ROOT_LIBRARIES} ${GENFIT_LIBRARIES})
+target_link_libraries(mapiX ${ROOT_LIBRARIES} ${GENFIT_LIBRARIES})

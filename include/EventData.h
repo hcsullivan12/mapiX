@@ -4,18 +4,17 @@
 #include <string>
 #include <vector>
 #include <map>
+#include "Event.h"
 
 class EventData {
 
 	public:
 		EventData(std::string trackFileName);
 		void ReadFile();
-		std::multimap<int, std::vector<double> > getEventMap() const;
-		std::vector<int> getEvents() const ;
+		std::vector<Event> getEvents() const ;
 
 	private:
 		std::string file;
-                std::multimap<int, std::vector<double> > eventMap;
-                std::vector<int> events;
+        std::vector<Event> events;
 };
 #endif
