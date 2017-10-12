@@ -191,24 +191,35 @@ void MapToPixels::map() {
 	
 	///BUILDING YZ PLOTS
 	///Loop through events
-	for (const auto &event : events) {
+	for (const auto &event : inputData.getEvents()) {
 		
 		///Create 2D histogram for this event
 		std::cout << "Creating YZ histogram for Run " << event.runID << " Subrun " << event.subrunID << 
                   " Event " << event.eventID << std::endl;
 		const std::string yzHistoName = "Run " + std::to_string(event.runID) + " Subrun " + std::to_string(event.subrunID) + " Event " + std::to_string(event.eventID);
-		TH2S *yzHisto = new TH2S(yzHistoName.c_str(), yzHistoName.c_str(), 240, 0, 240, 120, 0, -120); 
-		yzHisto->GetYaxis()->SetRangeUser(-120, 0);
-		yzHisto->GetYaxis()->SetTitle("Y (PixP units)");
-		yzHisto->GetXaxis()->SetTitle("Z (PixP units)");
-		double sample = 0;
-		for (auto it = event.dataHitOrder.begin(); it != event.dataHitOrder.end(); it++) {
+		TH2D *yzHisto = new TH2D(yzHistoName.c_str(), yzHistoName.c_str(), 90, 0, 90, 40, -20, 20); 
+		yzHisto->GetYaxis()->SetTitle("Y (cm)");
+		yzHisto->GetXaxis()->SetTitle("Z (cm)");
+		
+		for (auto it = event.rawHits.begin(); it != event.rawHits.end(); it++) {
 			//std::cout << it->second.z << "  " << it->second.y << std::endl;
-			auto noise = noiseHisto->GetBinContent((sample + 1));
-			auto noiseAndHit = noise + 100*it->second.colHitADC;
-			yzHisto->Fill(it->second.z, it->second.y);
-			sample++;
+			//auto noise = noiseHisto->GetBinContent((sample + 1));
+			//auto noiseAndHit = noise + 100*it->second.colHitADC;
+			for (int i = 0; i < 100; i++) {
+			
+				if (pcbCanSee(it->z, it->y, true)) {
+					yzHisto->SetMarkerStyle(kBlack);
+					yzHisto->Fill(it->z, it->y);
+				}
+				else {
+					yzHisto->SetMarkerStyle(kRed);
+					yzHisto->Fill(it->z,it->y);
+					
+				}
+			}
+			//sample++;
 		}
+		
 		yzHisto->Write();
 		delete yzHisto;
 	}
@@ -225,44 +236,28 @@ void MapToPixels::find2DHits(const unsigned &t_runID,
 	             std::vector<Hit2d> &t_roiHits,
                  std::multimap<double, Hit2d> &t_roiHitOrder,
 			     std::multimap<double, Hit> &t_dataHitOrder) {
-	
-	/*///Get event hits from the data
-	const auto &t_eventHits = inputData.getEvents().;*/
-	/*///Take the given input event data hits and order according to x component 
-	///These will now be ordered in time*/
+					 
+	///Take the given input event data hits and order according to x component 
+	///These will now be ordered in time
 	///Loop through the coordinates of this event and store results in this event's dataHitOrder multimap
 	for (auto it : t_rawHits){
-		//std::cout << "Converting xyz: " << it.x << " " << it.y << " " << it.z << " to time sample units and storing" << std::endl;
-		//std::pair<double, double> yzCoor (it.y, it.z);
 		///Convert x to time samples
-		//double x_compInSamples = it->x;
 		///Digitization speed is in ns, drift speed is in us
 		double x_compInSamples = (1000*it.x)/(pixelCoordinates.getDigitizationSpeed()*pixelCoordinates.getDriftSpeed()); 
 		t_dataHitOrder.insert( std::pair<double, Hit>(x_compInSamples, it) );
-		//std::cout << x_compInSamples << " " << yzCoor.first << " " << yzCoor.second << std::endl;
-			
 	}
-	
 	/*for(auto it = t_dataHitOrder.begin(); it != t_dataHitOrder.end(); it++){
 			std::cout << it->first << "  " << it->second.x << "  " << it->second.z << "  " << it->second.y << "  "  << it->second.colHitPeakTime << "  " << it->second.colHitWidth << "  " << it->second.colHitADC << "  " 
 					<< it->second.indHitPeakTime << "  "  << it->second.indHitWidth << "  " << it->second.indHitADC << std::endl;
-	}*/
-	//std::cout << std::endl;	
-	//std::cout << "PCB Origin: " << "Z ---> " << pixelCoordinates.getPCBOrigin().at(0) << "  Y ----> " << pixelCoordinates.getPCBOrigin().at(1) << std::endl;
-	///Convert coordinates relative to PCB origin (y, z)
-	//std::cout << "With respect to the PCB Origin\n";
-	for(auto iter = t_dataHitOrder.begin(); iter != t_dataHitOrder.end(); iter++){
-		//std::cout << "Raw Coordinates: " << iter->second.z << "  " << iter->second.y << std::endl;
-		///Z component
-		iter->second.z = iter->second.z - pixelCoordinates.getPCBOrigin().at(0);
-		///Y component, positive axis is flipped
-		iter->second.y = iter->second.y - pixelCoordinates.getPCBOrigin().at(1);
-		//std::cout << "Converted to PCB Coordinates: " << iter->second.z << "  " << iter->second.y << std::endl;
-		//std::cout << std::endl;
-
-		//std::cout << iter->first << "  " << iter->second.first << "  " << iter->second.second << std::endl;
 	}
-	//std::cout << std::endl;
+	std::cout << std::endl;*/
+	
+	//std::cout << "PCB Origin: " << "Z ---> " << pixelCoordinates.getPCBOrigin().at(0) << "  Y ----> " << pixelCoordinates.getPCBOrigin().at(1) << std::endl;
+	
+	///Convert coordinates relative to PCB origin (y, z)
+	for(auto iter = t_dataHitOrder.begin(); iter != t_dataHitOrder.end(); iter++){
+		convertToPCBCoordinates(iter->second.z, iter->second.y);
+	}
 	/*for(auto it = t_dataHitOrder.begin(); it != t_dataHitOrder.end(); it++){
 		std::cout << it->first << "  " << it->second.x << "  " << it->second.y << "  " << it->second.z << "  "  << it->second.colHitPeakTime << "  " << it->second.colHitWidth << "  " << it->second.colHitADC << "  " 
 			<< it->second.indHitPeakTime << "  "  << it->second.indHitWidth << "  " << it->second.indHitADC << std::endl;
@@ -272,8 +267,7 @@ void MapToPixels::find2DHits(const unsigned &t_runID,
 	///Convert YZ coordinates to units of pixel pitch
 	///std::cout << "In units of pixel pitch\n";
 	for(auto it = t_dataHitOrder.begin(); it != t_dataHitOrder.end(); it++) {
-		convertYZToPixelUnits(it->second);
-		//std::cout << it->second.first << "  " << it->second.second << std::endl;
+		convertYZToPixelUnits(it->second.z, it->second.y);
 	}
 	/*for(auto it = t_dataHitOrder.begin(); it != t_dataHitOrder.end(); it++){
 		std::cout << it->first << "  " << it->second.x << "  " << it->second.y << "  " << it->second.z << "  "  << it->second.colHitPeakTime << "  " << it->second.colHitWidth << "  " << it->second.colHitADC << "  " 
@@ -291,17 +285,15 @@ void MapToPixels::find2DHits(const unsigned &t_runID,
 
 };
 
-void MapToPixels::convertYZToPixelUnits(Hit &t_hit) {
+void MapToPixels::convertYZToPixelUnits(double &z, double &y) {
 	
 	///Divide by the pixel pitch (in cm)
-	t_hit.y = t_hit.y/pixelCoordinates.getPixelPitch();
-	t_hit.z = t_hit.z/pixelCoordinates.getPixelPitch();
+	y = y/pixelCoordinates.getPixelPitch();
+	z = z/pixelCoordinates.getPixelPitch();
 
 	///Round to nearest pixel
-	t_hit.y = static_cast<int>(round(t_hit.y));
-	t_hit.z = static_cast<int>(round(t_hit.z));
-	
-
+	y = static_cast<int>(round(y));
+	z = static_cast<int>(round(z));
 };
 
 void MapToPixels::convertYZToROIandPixelIDs(const std::multimap<double, Hit> &t_dataHitOrder, 
@@ -311,9 +303,7 @@ void MapToPixels::convertYZToROIandPixelIDs(const std::multimap<double, Hit> &t_
 	///Check to make sure the pixels can see hit
 	for (auto it = t_dataHitOrder.begin(); it != t_dataHitOrder.end(); it++){
 		
-		if(it->second.y > 0 || it->second.z < 0 || 
-			it->second.y < -1*(pixelCoordinates.getPixelRegionHeight() - pixelCoordinates.getPixelPitch()/2)/pixelCoordinates.getPixelPitch() || 
-			it->second.z > (pixelCoordinates.getPixelRegionWidth() - pixelCoordinates.getPixelPitch()/2)/pixelCoordinates.getPixelPitch()) {
+		if(!pcbCanSee(it->second.z, it->second.y, false)) {
 			//std::cout << "Skipping: " << it->second.first << "  " << it->second.second << std::endl;
 			continue;
 		}
@@ -365,3 +355,28 @@ void MapToPixels::convertYZToROIandPixelIDs(const std::multimap<double, Hit> &t_
 		}
 	}
 };
+
+void MapToPixels::convertToPCBCoordinates(double &z, double &y) {
+	///Z component
+	z = z - pixelCoordinates.getPCBOrigin().at(0);
+	///Y component
+	y = y - pixelCoordinates.getPCBOrigin().at(1);
+}
+
+bool MapToPixels::pcbCanSee(const double &z, const double &y, bool tpcCoor) {
+	
+	double zPrime = z;
+	double yPrime = y;
+	
+	if (tpcCoor) {
+		convertToPCBCoordinates(zPrime, yPrime);
+	}
+	if (yPrime > 0 || zPrime < 0 || 
+		yPrime < -1*(pixelCoordinates.getPixelRegionHeight() - pixelCoordinates.getPixelPitch()/2)/pixelCoordinates.getPixelPitch() || 
+		zPrime > (pixelCoordinates.getPixelRegionWidth() - pixelCoordinates.getPixelPitch()/2)/pixelCoordinates.getPixelPitch()) {
+	
+		return false;
+	}
+	return true;
+	
+}

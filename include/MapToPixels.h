@@ -28,10 +28,12 @@ class MapToPixels {
 	             std::vector<Hit2d> &t_roiHits,
                  std::multimap<double, Hit2d> &t_roiHitOrder,
 			     std::multimap<double, Hit> &t_dataHitOrder);
-		void convertYZToPixelUnits(Hit &t_hit); 
+		void convertYZToPixelUnits(double &z, double &y); 
 		void convertYZToROIandPixelIDs(const std::multimap<double, Hit > &t_dataHitOrder, 
                  std::vector<Hit2d> &t_roiHits, std::multimap<double, Hit2d> &t_roiHitOrder,
                  std::vector<Hit2d> &t_pixelHits, std::multimap<double, Hit2d> &t_pixelHitOrder);
+        void convertToPCBCoordinates(double &z, double &y);
+		bool pcbCanSee(const double &z, const double &y, bool tpcCoor);
 };
 
 
