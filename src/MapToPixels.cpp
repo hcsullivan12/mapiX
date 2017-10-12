@@ -56,41 +56,54 @@ void MapToPixels::map() {
 		std::cout << "Creating pixel histogram for Run " << event.runID << " Subrun " << event.subrunID << 
                   " Event " << event.eventID << std::endl;
 		const std::string pixelHistoName = "Run " + std::to_string(event.runID) + " Subrun " + std::to_string(event.subrunID) + " Event " + std::to_string(event.eventID) + " Pixels";
-		TH2S *pixelHisto = new TH2S(pixelHistoName.c_str(), pixelHistoName.c_str(), pixelCoordinates.getNPixels(), 0, pixelCoordinates.getNPixels(), pixelCoordinates.getNSamples(), 0, pixelCoordinates.getNSamples()); 
+		TH2D *pixelHisto = new TH2D(pixelHistoName.c_str(), pixelHistoName.c_str(), pixelCoordinates.getNPixels(), 0, pixelCoordinates.getNPixels(), pixelCoordinates.getNSamples() + 1000, 0, pixelCoordinates.getNSamples() + 1000); 
 		pixelHisto->GetYaxis()->SetTitle("Time Samples");
 		pixelHisto->GetXaxis()->SetTitle("Pixel Channel");
 		
-		/*///Loop through each channel, filling the 1D channel histos
+		///Loop through each channel, filling the 1D channel histos
 		std::cout << "Filling channel histograms...\n";
 		for (unsigned channel = 0; channel < pixelHisto->GetNbinsX(); channel++){
 			
 			///Build a hit histogram
 			const std::string Name = "Event " + std::to_string(event.eventID) + " Pixel " + std::to_string(channel);
 			TH1D *hitHisto = new TH1D(Name.c_str(), Name.c_str(), pixelHisto->GetNbinsY(), 0, pixelHisto->GetNbinsY());
-			
+						
 			///Loop through the pixel hit order for this event
-			for (auto it = event->pixelHitOrder.begin(); it != event->pixelHitOrder.end(); it++) {
+			for (auto it = event.pixelHitOrder.begin(); it != event.pixelHitOrder.end(); it++) {
 				///Find all IDs matching this channel
-				if (it->second == channel) {
+				if (it->second.channel == channel) {
 					
 					///Fill a hit histogram
 					TRandom3 r;
-					for (int i=0; i < 100000; i++) { 
+					for (int i=0; i < 1000*it->second.colHitADC; i++) { 
 						hitHisto->Fill(r.Gaus(it->first, pixelCoordinates.getWidthOfPixelPulse()));
 					}
+					/*TF1 *gaussian = new TF1("gaussian", "gaus(0)", 0, hitHisto->GetNbinsX());
+					double height = 1000*it->second.colHitADC;
+					double mean = it->first;
+					double stdDev = it->second.colHitWidth;
+					//std::cout << it->second.colHitWidth << std::endl;
+					gaussian->SetParameters(height, mean, 10);
+					hitHisto->FillRandom("gaussian", 3000);
+					delete gaussian;*/
 				}
 			}
-			//hitHisto->Write();
+			
 			///Set the content for all samples
 
 			for (unsigned sample = 0; sample < pixelHisto->GetNbinsY(); sample++) {
-				auto noise = noiseHisto->GetBinContent((sample + 1));
-				auto noiseAndHit = noise + hitHisto->GetBinContent(sample + 1);
-				//std::cout << noise << "   " << noiseAndHit << "\n";
+				double noise = noiseHisto->GetBinContent((sample + 1));
+				if(sample > 2000) noise = noiseHisto->GetBinContent((sample - 1000));
+				double hit = hitHisto->GetBinContent(sample + 1);
+				double noiseAndHit = noise + hit;
+				hitHisto->SetBinContent(sample + 1, noiseAndHit);
 				pixelHisto->SetBinContent((channel + 1), (sample + 1), noiseAndHit);
+				if (pixelHisto->GetBinContent((channel + 1), (sample + 1)) != noiseAndHit) std::cout << "Pixel bin content error!!\n";
+
 			}
+			//hitHisto->Write();
 			delete hitHisto;
-		}*/
+		}
 		pixelHisto->Write();
 		delete pixelHisto;
 	}
@@ -104,40 +117,45 @@ void MapToPixels::map() {
 		std::cout << "Creating ROI histogram for Run " << event.runID << " Subrun " << event.subrunID << 
                   " Event " << event.eventID << std::endl;
 		const std::string roiHistoName = "Run " + std::to_string(event.runID) + " Subrun " + std::to_string(event.subrunID) + " Event " + std::to_string(event.eventID) + " ROI";
-		TH2S *roiHisto = new TH2S(roiHistoName.c_str(), roiHistoName.c_str(), pixelCoordinates.getNROI(), 0, pixelCoordinates.getNROI(), pixelCoordinates.getNSamples(), 0, pixelCoordinates.getNSamples()); 
+		TH2D *roiHisto = new TH2D(roiHistoName.c_str(), roiHistoName.c_str(), pixelCoordinates.getNROI(), 0, pixelCoordinates.getNROI(), pixelCoordinates.getNSamples() + 1000, 0, pixelCoordinates.getNSamples() + 1000); 
 		roiHisto->GetYaxis()->SetTitle("Time Samples");
 		roiHisto->GetXaxis()->SetTitle("ROI Channel");
-		/*
+		
 		///Loop through each channel, filling the 1D channel histos
 		std::cout << "Filling channel histograms...\n";
-		for (unsigned channel = 0; channel < roiHisto->GetNbinsY(); channel++){
+		for (unsigned channel = 0; channel < roiHisto->GetNbinsX(); channel++){
 			
 			///Build a hit histogram
-			const std::string posName = "Event " + std::to_string(eventID) + " Positive ROI " + std::to_string(channel);
-			const std::string negName = "Event " + std::to_string(eventID) + " Negative ROI " + std::to_string(channel);
-			TH1D *positiveHitHisto = new TH1D(posName.c_str(), posName.c_str(), roiHisto->GetNbinsX(), 0, roiHisto->GetNbinsX());
-			TH1D *negativeHitTemp = new TH1D("Temp", "Temp", roiHisto->GetNbinsX(), 0, roiHisto->GetNbinsX());
-			TH1D *negativeHitHisto = new TH1D(negName.c_str(), negName.c_str(), roiHisto->GetNbinsX(), 0, roiHisto->GetNbinsX());
+			const std::string posName     = "Event " + std::to_string(event.eventID) + " Positive ROI " + std::to_string(channel);
+			const std::string negName     = "Event " + std::to_string(event.eventID) + " Negative ROI " + std::to_string(channel);
+			const std::string negTempName = "Event " + std::to_string(event.eventID) + " Negative ROI temp " + std::to_string(channel);
+			const std::string hitName     = "Event " + std::to_string(event.eventID) + " ROI hit Channel " + std::to_string(channel);
+			TH1D *positiveHitHisto  = new TH1D(posName.c_str(), posName.c_str(), roiHisto->GetNbinsY(), 0, roiHisto->GetNbinsY());
+			TH1D *negativeHitTemp   = new TH1D(negTempName.c_str(), negTempName.c_str(), roiHisto->GetNbinsY(), 0, roiHisto->GetNbinsY());
+			TH1D *negativeHitHisto  = new TH1D(negName.c_str(), negName.c_str(), roiHisto->GetNbinsY(), 0, roiHisto->GetNbinsY());
+			TH1D *hitHisto          = new TH1D(hitName.c_str(), hitName.c_str(), roiHisto->GetNbinsY(), 0, roiHisto->GetNbinsY());
 			
 			///Loop through the ROI hit order for this event
-			for (auto it = event->roiHitOrder.begin(); it != event->roiHitOrder.end(); it++) {
+			for (auto it = event.roiHitOrder.begin(); it != event.roiHitOrder.end(); it++) {
+				//std::cout << "Time: " << it->first << "   Channel: " << it->second.channel << std::endl;
 				///Find all IDs matching this channel
-				if (it->second == channel) {
+				if (it->second.channel == channel) {
 					
 					///Fill a positive hit histogram
 					TRandom3 r;
-					for (int i=0; i < 100000; i++) { 
-						positiveHitHisto->Fill(r.Gaus(it->first - pixelCoordinates.getHitDisc(), pixelCoordinates.getWidthOfROIPulse())); ////THISSSSS
+					for (int i=0; i < 100*it->second.indHitADC; i++) { 
+						positiveHitHisto->Fill(r.Gaus(it->first - pixelCoordinates.getHitDisc(), pixelCoordinates.getWidthOfROIPulse())); 
 					}
 					
 					//int maxPositiveSample = (positiveHitHisto->GetMaximumBin());
 					//std::cout << it->first << "   " << maxPositiveSample << std::endl;
+					///Fill a negative hit histogram
 					TRandom3 w;
-					for (int i=0; i < 100000; i++) { 
+					for (int i=0; i < 100*it->second.indHitADC; i++) { 
 						negativeHitTemp->Fill(r.Gaus(it->first - pixelCoordinates.getHitDisc() + pixelCoordinates.getROIPeakDifference(), pixelCoordinates.getWidthOfROIPulse())); ////THISSSSS
 					}
 					for (unsigned sample = 0; sample < negativeHitTemp->GetNbinsX(); sample++) {
-						auto content = -1*negativeHitTemp->GetBinContent((sample + 1));
+						double content = -1*negativeHitTemp->GetBinContent((sample + 1));
 						//if(content > 0) std::cout << "HEYYYYYY!!!!!! Channel " << channel << "      Content " << content << "\n";
 						negativeHitHisto->SetBinContent((sample + 1), content);
 					}
@@ -147,19 +165,52 @@ void MapToPixels::map() {
 			//negativeHitHisto->Write();
 			///Set the content for all samples
 
-			for (unsigned sample = 0; sample < roiHisto->GetNbinsX(); sample++) {
-				auto noise = noiseHisto->GetBinContent((sample + 1));
-				auto noiseAndHit = noise + positiveHitHisto->GetBinContent(sample + 1) + negativeHitHisto->GetBinContent(sample + 1);
-				//std::cout << noise << "   " << noiseAndHit << "\n";
-				roiHisto->SetBinContent((sample + 1), (channel + 1), noiseAndHit);
+			for (unsigned sample = 0; sample < roiHisto->GetNbinsY(); sample++) {
+				double noise = noiseHisto->GetBinContent((sample + 1));
+				double posHit = positiveHitHisto->GetBinContent(sample + 1);
+				double negHit = negativeHitHisto->GetBinContent(sample + 1);
+				if(sample > 2000) noise = noiseHisto->GetBinContent((sample - 1000));
+				//if (posHit != 0) std::cout << posHit << std::endl;
+				double noiseAndHit = noise + posHit + negHit;
+				hitHisto->SetBinContent((sample + 1), (posHit + negHit + noise));
+				roiHisto->SetBinContent((channel + 1), (sample + 1), noiseAndHit);
+				if (roiHisto->GetBinContent((channel + 1), (sample + 1)) != noiseAndHit) std::cout << "ROI bin content error!!\n";
 			}
+			//positiveHitHisto->Write();
 			delete positiveHitHisto;
+			//negativeHitHisto->Write();
 			delete negativeHitHisto;
+			//hitHisto->Write();
+			delete hitHisto;
 			delete negativeHitTemp;
-		}*/
+		}
 		roiHisto->Write();
 		delete roiHisto;
-		//delete mcStyle;
+	}
+	std::cout << std::endl;
+	
+	///BUILDING YZ PLOTS
+	///Loop through events
+	for (const auto &event : events) {
+		
+		///Create 2D histogram for this event
+		std::cout << "Creating YZ histogram for Run " << event.runID << " Subrun " << event.subrunID << 
+                  " Event " << event.eventID << std::endl;
+		const std::string yzHistoName = "Run " + std::to_string(event.runID) + " Subrun " + std::to_string(event.subrunID) + " Event " + std::to_string(event.eventID);
+		TH2S *yzHisto = new TH2S(yzHistoName.c_str(), yzHistoName.c_str(), 240, 0, 240, 120, 0, -120); 
+		yzHisto->GetYaxis()->SetRangeUser(-120, 0);
+		yzHisto->GetYaxis()->SetTitle("Y (PixP units)");
+		yzHisto->GetXaxis()->SetTitle("Z (PixP units)");
+		double sample = 0;
+		for (auto it = event.dataHitOrder.begin(); it != event.dataHitOrder.end(); it++) {
+			//std::cout << it->second.z << "  " << it->second.y << std::endl;
+			auto noise = noiseHisto->GetBinContent((sample + 1));
+			auto noiseAndHit = noise + 100*it->second.colHitADC;
+			yzHisto->Fill(it->second.z, it->second.y);
+			sample++;
+		}
+		yzHisto->Write();
+		delete yzHisto;
 	}
 	
 	histogramFile.Close();
@@ -170,9 +221,9 @@ void MapToPixels::find2DHits(const unsigned &t_runID,
  			     const unsigned &t_eventID, 
  			     const std::vector<Hit> &t_rawHits,
 			     std::vector<Hit2d> &t_pixelHits,
-		         std::multimap<double, unsigned> &t_pixelHitOrder,
+		         std::multimap<double, Hit2d> &t_pixelHitOrder,
 	             std::vector<Hit2d> &t_roiHits,
-                 std::multimap<double, unsigned> &t_roiHitOrder,
+                 std::multimap<double, Hit2d> &t_roiHitOrder,
 			     std::multimap<double, Hit> &t_dataHitOrder) {
 	
 	/*///Get event hits from the data
@@ -193,21 +244,30 @@ void MapToPixels::find2DHits(const unsigned &t_runID,
 	}
 	
 	/*for(auto it = t_dataHitOrder.begin(); it != t_dataHitOrder.end(); it++){
-			std::cout << it->first << "  " << it->second.x << "  " << it->second.y << "  " << it->second.z << "  "  << it->second.colHitPeakTime << "  " << it->second.colHitWidth << "  " << it->second.colHitADC << "  " 
+			std::cout << it->first << "  " << it->second.x << "  " << it->second.z << "  " << it->second.y << "  "  << it->second.colHitPeakTime << "  " << it->second.colHitWidth << "  " << it->second.colHitADC << "  " 
 					<< it->second.indHitPeakTime << "  "  << it->second.indHitWidth << "  " << it->second.indHitADC << std::endl;
-	}
-	std::cout << std::endl;	*/
-
+	}*/
+	//std::cout << std::endl;	
+	//std::cout << "PCB Origin: " << "Z ---> " << pixelCoordinates.getPCBOrigin().at(0) << "  Y ----> " << pixelCoordinates.getPCBOrigin().at(1) << std::endl;
 	///Convert coordinates relative to PCB origin (y, z)
 	//std::cout << "With respect to the PCB Origin\n";
-	/*for(auto iter = t_dataHitOrder.begin(); iter != t_dataHitOrder.end(); iter++){
-		///Y component
-		iter->second.first = iter->second.first - pixelCoordinates.getPCBOrigin().at(0);
-		///Z component, positive axis is flipped
-		iter->second.second = -1*(iter->second.second - pixelCoordinates.getPCBOrigin().at(1));
+	for(auto iter = t_dataHitOrder.begin(); iter != t_dataHitOrder.end(); iter++){
+		//std::cout << "Raw Coordinates: " << iter->second.z << "  " << iter->second.y << std::endl;
+		///Z component
+		iter->second.z = iter->second.z - pixelCoordinates.getPCBOrigin().at(0);
+		///Y component, positive axis is flipped
+		iter->second.y = iter->second.y - pixelCoordinates.getPCBOrigin().at(1);
+		//std::cout << "Converted to PCB Coordinates: " << iter->second.z << "  " << iter->second.y << std::endl;
+		//std::cout << std::endl;
+
 		//std::cout << iter->first << "  " << iter->second.first << "  " << iter->second.second << std::endl;
 	}
 	//std::cout << std::endl;
+	/*for(auto it = t_dataHitOrder.begin(); it != t_dataHitOrder.end(); it++){
+		std::cout << it->first << "  " << it->second.x << "  " << it->second.y << "  " << it->second.z << "  "  << it->second.colHitPeakTime << "  " << it->second.colHitWidth << "  " << it->second.colHitADC << "  " 
+			<< it->second.indHitPeakTime << "  "  << it->second.indHitWidth << "  " << it->second.indHitADC << std::endl;
+	}
+	std::cout << std::endl;	*/
 	
 	///Convert YZ coordinates to units of pixel pitch
 	///std::cout << "In units of pixel pitch\n";
@@ -215,40 +275,45 @@ void MapToPixels::find2DHits(const unsigned &t_runID,
 		convertYZToPixelUnits(it->second);
 		//std::cout << it->second.first << "  " << it->second.second << std::endl;
 	}
+	/*for(auto it = t_dataHitOrder.begin(); it != t_dataHitOrder.end(); it++){
+		std::cout << it->first << "  " << it->second.x << "  " << it->second.y << "  " << it->second.z << "  "  << it->second.colHitPeakTime << "  " << it->second.colHitWidth << "  " << it->second.colHitADC << "  " 
+				<< it->second.indHitPeakTime << "  "  << it->second.indHitWidth << "  " << it->second.indHitADC << std::endl;
+	}
+	std::cout << std::endl;	*/
 	
 	///Convert YZ coordinates to ROI IDs
 	convertYZToROIandPixelIDs(t_dataHitOrder, t_roiHits, t_roiHitOrder, t_pixelHits, t_pixelHitOrder);
 
 	/*for(auto iter = t_dataHitOrder.begin(); iter != t_dataHitOrder.end(); iter++){
 		std::cout << iter->first << "  " <<iter->second.first << "  " << iter->second.second << "       " << abs(fmod(iter->second.first, 8)) << "  " << abs(fmod(iter->second.second, 15)) << std::endl;
-	}*/
-	//std::cout << std::endl;*/
+	}
+	std::cout << std::endl;*/
 
 };
 
-void MapToPixels::convertYZToPixelUnits(std::pair<double, double> &t_YZCoor) {
+void MapToPixels::convertYZToPixelUnits(Hit &t_hit) {
 	
 	///Divide by the pixel pitch (in cm)
-	t_YZCoor.first = t_YZCoor.first/pixelCoordinates.getPixelPitch();
-	t_YZCoor.second = t_YZCoor.second/pixelCoordinates.getPixelPitch();
+	t_hit.y = t_hit.y/pixelCoordinates.getPixelPitch();
+	t_hit.z = t_hit.z/pixelCoordinates.getPixelPitch();
 
 	///Round to nearest pixel
-	t_YZCoor.first = static_cast<int>(round(t_YZCoor.first));
-	t_YZCoor.second = static_cast<int>(round(t_YZCoor.second));
+	t_hit.y = static_cast<int>(round(t_hit.y));
+	t_hit.z = static_cast<int>(round(t_hit.z));
 	
 
 };
 
-void MapToPixels::convertYZToROIandPixelIDs(const std::multimap<double, std::pair<double, double>> &t_dataHitOrder, 
-				    std::vector<Hit2d> &t_roiHits, std::multimap<double, unsigned> &t_roiHitOrder,
-				    std::vector<Hit2d> &t_pixelHits, std::multimap<double, unsigned> &t_pixelHitOrder) {
+void MapToPixels::convertYZToROIandPixelIDs(const std::multimap<double, Hit> &t_dataHitOrder, 
+				    std::vector<Hit2d> &t_roiHits, std::multimap<double, Hit2d> &t_roiHitOrder,
+				    std::vector<Hit2d> &t_pixelHits, std::multimap<double, Hit2d> &t_pixelHitOrder) {
 	///Loop through all the hits
 	///Check to make sure the pixels can see hit
 	for (auto it = t_dataHitOrder.begin(); it != t_dataHitOrder.end(); it++){
 		
-		if(it->second.first > 0 || it->second.second < 0 || 
-			it->second.first < -1*(pixelCoordinates.getPixelRegionHeight() - pixelCoordinates.getPixelPitch()/2)/pixelCoordinates.getPixelPitch() || 
-			it->second.second > (pixelCoordinates.getPixelRegionWidth() - pixelCoordinates.getPixelPitch()/2)/pixelCoordinates.getPixelPitch()) {
+		if(it->second.y > 0 || it->second.z < 0 || 
+			it->second.y < -1*(pixelCoordinates.getPixelRegionHeight() - pixelCoordinates.getPixelPitch()/2)/pixelCoordinates.getPixelPitch() || 
+			it->second.z > (pixelCoordinates.getPixelRegionWidth() - pixelCoordinates.getPixelPitch()/2)/pixelCoordinates.getPixelPitch()) {
 			//std::cout << "Skipping: " << it->second.first << "  " << it->second.second << std::endl;
 			continue;
 		}
@@ -265,8 +330,8 @@ void MapToPixels::convertYZToROIandPixelIDs(const std::multimap<double, std::pai
 				///Entry: First is Y, Second is Z        roiCoor: 0 is Y, 1 is Z
 				///Y condition                                    Z condition
 				//std::cout << "IN WHILE LOOP " << roiCoor.at(ID).at(0) << " >= " << it->second.first << " > " << roiCoor.at(ID).at(0) - 8 <<  "\n";
-				if((roiCoor.at(ID).at(0) >= it->second.first && it->second.first > (roiCoor.at(ID).at(0) - 8)) && 
-				   (roiCoor.at(ID).at(1) <= it->second.second && it->second.second < (roiCoor.at(ID).at(1) + 15))){
+				if((roiCoor.at(ID).at(0) >= it->second.y && it->second.y > (roiCoor.at(ID).at(0) - 8)) && 
+				   (roiCoor.at(ID).at(1) <= it->second.z && it->second.z < (roiCoor.at(ID).at(1) + 15))){
 					//std::cout << "IN IF STATEMENT!\n";
 					roiID = ID;
 					foundID = true;
@@ -275,20 +340,28 @@ void MapToPixels::convertYZToROIandPixelIDs(const std::multimap<double, std::pai
 				ID++;
 			}
 			
-			///ID is found, build a hit
-			//std::cout << it->second.first << "  " << it->second.second << " is match to ROI #" << roiID << std::endl; 
+			///ID is found, build a hit 
 			Hit2d roiHit;
 			roiHit.channel = roiID;
+			roiHit.indHitPeakTime = it->second.indHitPeakTime;
+			roiHit.indHitWidth = it->second.indHitWidth;
+			roiHit.indHitADC = it->second.indHitADC;
 			t_roiHits.push_back(roiHit);
-			t_roiHitOrder.insert( std::pair<double, unsigned>(it->first, roiID) );
+			t_roiHitOrder.insert( std::pair<double, Hit2d>(it->first, roiHit) );
 			
 			Hit2d pixelHit;
-			pixelHit.channel = 15*abs(fmod(it->second.first, 8)) + abs(fmod(it->second.second, 15));
+			pixelHit.channel = 15*abs(fmod(it->second.y, 8)) + abs(fmod(it->second.z, 15));
+			if (it->second.z >= 120) pixelHit.channel = pixelHit.channel + 120; 
+			pixelHit.colHitPeakTime = it->second.colHitPeakTime;
+			pixelHit.colHitWidth = it->second.colHitWidth;
+			pixelHit.colHitADC = it->second.colHitADC;
 			t_pixelHits.push_back(pixelHit);
-			t_pixelHitOrder.insert( std::pair<double, unsigned>(it->first, pixelHit.channel) );
-			//std::cout << it->first << "  " << it->second.first << "  " << it->second.second << "       " << abs(fmod(it->second.first, 8)) << "  " << abs(fmod(it->second.second, 15)) << std::endl;
-			//std::cout << "Pixel channel is: " << pixelHit.channel << " \n";
-			//std::cout << "ROI channel is: " << roiHit.channel << "\n\n";
+			t_pixelHitOrder.insert( std::pair<double, Hit2d>(it->first, pixelHit) );
+			//std::cout << "Time " << it->first << "    Y: " << it->second.y << "     Z: " << it->second.z << std::endl;
+			//std::cout << "Is matched to ROI #" << roiID  << "    Pixel #" << pixelHit.channel << std::endl;
+			/*std::cout << it->first << "  " << it->second.y << "  " << it->second.z << std::endl;//"       " << abs(fmod(it->second.y, 8)) << "  " << abs(fmod(it->second.z, 15)) << std::endl;
+			std::cout << "Pixel channel is: " << pixelHit.channel << " \n";
+			std::cout << "ROI channel is: " << roiHit.channel << "\n\n";*/
 		}
 	}
 };

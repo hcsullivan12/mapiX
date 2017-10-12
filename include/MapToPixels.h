@@ -24,14 +24,14 @@ class MapToPixels {
  			     const unsigned &t_eventID,
  			     const std::vector<Hit> &t_rawHits,
 			     std::vector<Hit2d> &t_pixelHits,
-		         std::multimap<double, unsigned> &t_pixelHitOrder,
+		         std::multimap<double, Hit2d> &t_pixelHitOrder,
 	             std::vector<Hit2d> &t_roiHits,
-                 std::multimap<double, unsigned> &t_roiHitOrder,
+                 std::multimap<double, Hit2d> &t_roiHitOrder,
 			     std::multimap<double, Hit> &t_dataHitOrder);
-		void convertYZToPixelUnits(std::pair<double, double> &t_YZCoor); 
-		void convertYZToROIandPixelIDs(const std::multimap<double, std::pair<double, double>> &t_dataHitOrder, 
-                 std::vector<Hit2d> &t_roiHits, std::multimap<double, unsigned> &t_roiHitOrder,
-                 std::vector<Hit2d> &t_pixelHits, std::multimap<double, unsigned> &t_pixelHitOrder);
+		void convertYZToPixelUnits(Hit &t_hit); 
+		void convertYZToROIandPixelIDs(const std::multimap<double, Hit > &t_dataHitOrder, 
+                 std::vector<Hit2d> &t_roiHits, std::multimap<double, Hit2d> &t_roiHitOrder,
+                 std::vector<Hit2d> &t_pixelHits, std::multimap<double, Hit2d> &t_pixelHitOrder);
 };
 
 

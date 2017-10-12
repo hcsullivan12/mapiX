@@ -10,30 +10,17 @@ struct Hit2d {
         ///
         unsigned channel;
 
-        ///
-        /// Index in the raw histogram of the first sample of the pulse.
-        ///
-        unsigned firstSample;
-
-        ///
-        /// Index in the raw histogram of the positive peak sample of the pulse.
-        ///
-        unsigned posPeakSample;
-
-        ///
-        /// Index in the raw histogram of the first negative sample of the pulse.
-        ///
-        unsigned zeroCrossSample;
-
-        ///
-        /// Index in the raw histogram of the negative peak sample of the pulse.
-        ///
-        unsigned negPeakSample;
-
-        ///
-        /// Index in the raw histogram of the last sample of the pulse.
-        ///
-        unsigned lastSample;
+        double colHitPeakTime;
+	
+		double colHitWidth;
+	
+		double colHitADC;
+	
+		double indHitPeakTime;
+	
+		double indHitWidth;
+	
+		double indHitADC;
 
 };
 
@@ -135,7 +122,7 @@ struct Event {
     ///
     /// Map from viper2dHit.firstSample to its index in pixelHits.
     /// (sample, pixelID)
-    std::multimap<double, unsigned> pixelHitOrder;
+    std::multimap<double, Hit2d> pixelHitOrder;
 
     ///
     /// Map from viper2dHit.lastSample to its index in pixelHits.
@@ -150,7 +137,7 @@ struct Event {
     ///
     /// Map from viper2dHit.firstSample to its index in roiHits.
     /// (sample, roiID)
-    std::multimap<double, unsigned> roiHitOrder;
+    std::multimap<double, Hit2d> roiHitOrder;
 
     ///
     /// Map from viper2dHit.lastSample to its index in roiHits.

@@ -41,8 +41,9 @@ PixelCoordinates::PixelCoordinates(const std::string pixelCoordinatesFileName) {
 	hitDisc              = getJsonMember("hitDisc", rapidjson::kNumberType).GetDouble(); 
 	roiPeakDifference    = getJsonMember("roiPeakDifference", rapidjson::kNumberType).GetDouble(); 
 	
-	pcbOrigin.push_back(pixelRegionHeight/2 - pixelPitch/2);
-	pcbOrigin.push_back(pcbSideWidth + pixelRegionWidth - pixelPitch/2);
+	pcbOrigin.push_back(pcbSideWidth + pixelPitch/2);            //z
+	pcbOrigin.push_back(pixelRegionHeight/2 - pixelPitch/2);     //y
+	
 
 	///Pixel Coordinates (Y, Z)
         pixelCoor = std::vector<std::vector<int>>(nPixels, std::vector<int>(2));
