@@ -55,7 +55,7 @@ void MapToPixels::map() {
 		///Create 2D histogram for this event
 		std::cout << "Creating pixel histogram for Run " << event.runID << " Subrun " << event.subrunID << 
                   " Event " << event.eventID << std::endl;
-		const std::string pixelHistoName = "Run " + std::to_string(event.runID) + " Subrun " + std::to_string(event.subrunID) + " Event " + std::to_string(event.eventID) + " Pixels";
+		const std::string pixelHistoName = "Run" + std::to_string(event.runID) + "_Subrun" + std::to_string(event.subrunID) + "_Event" + std::to_string(event.eventID) + "_Pixels";
 		TH2D *pixelHisto = new TH2D(pixelHistoName.c_str(), pixelHistoName.c_str(), pixelCoordinates.getNPixels(), 0, pixelCoordinates.getNPixels(), pixelCoordinates.getNSamples() + 1000, 0, pixelCoordinates.getNSamples() + 1000); 
 		pixelHisto->GetYaxis()->SetTitle("Time Samples");
 		pixelHisto->GetXaxis()->SetTitle("Pixel Channel");
@@ -67,30 +67,42 @@ void MapToPixels::map() {
 			///Build a hit histogram
 			const std::string Name = "Event " + std::to_string(event.eventID) + " Pixel " + std::to_string(channel);
 			TH1D *hitHisto = new TH1D(Name.c_str(), Name.c_str(), pixelHisto->GetNbinsY(), 0, pixelHisto->GetNbinsY());
-						
+	
 			///Loop through the pixel hit order for this event
 			for (auto it = event.pixelHitOrder.begin(); it != event.pixelHitOrder.end(); it++) {
 				///Find all IDs matching this channel
 				if (it->second.channel == channel) {
-					
+					//std::cout << "Time: " << it->first << "    Pixel Channel: " << channel << "    ADC:" << it->second.colHitADC << "   Width: " << it->second.colHitWidth << std::endl;
 					///Fill a hit histogram
 					TRandom3 r;
-					for (int i=0; i < 1000*it->second.colHitADC; i++) { 
-						hitHisto->Fill(r.Gaus(it->first, pixelCoordinates.getWidthOfPixelPulse()));
+					double stdDev = it->second.colHitWidth/(2*sqrt(2*log(2)));
+					for (int i=0; i < 10000; i++) { 
+						hitHisto->Fill(r.Gaus(it->first, stdDev));
 					}
-					/*TF1 *gaussian = new TF1("gaussian", "gaus(0)", 0, hitHisto->GetNbinsX());
-					double height = 1000*it->second.colHitADC;
+					double scale = it->second.colHitADC/hitHisto->GetBinContent(hitHisto->GetMaximumBin());
+					for (auto sample = 0; sample < hitHisto->GetNbinsX(); sample++) {
+						double content = hitHisto->GetBinContent(sample + 1);
+						hitHisto->SetBinContent((sample + 1), content*scale);
+					}
+					/*TF1 *gaussian = new TF1("gaussian", "gausn", 0, hitHisto->GetNbinsX());
+					double height = it->second.colHitADC;
 					double mean = it->first;
-					double stdDev = it->second.colHitWidth;
+					double stdDev = it->second.colHitWidth/(2*sqrt(2*log(2)));
 					//std::cout << it->second.colHitWidth << std::endl;
-					gaussian->SetParameters(height, mean, 10);
-					hitHisto->FillRandom("gaussian", 3000);
+					gaussian->SetParameters(height, mean, stdDev);
+					hitHisto->FillRandom("gaussian", 10000);
+					double scale = height/hitHisto->GetBinContent(hitHisto->GetMaximumBin());
+					for (auto sample = 0; sample < hitHisto->GetNbinsX(); sample++) {
+						double content = hitHisto->GetBinContent(sample + 1);
+						hitHisto->SetBinContent((sample + 1), content*scale);
+					}
 					delete gaussian;*/
+					//hitHisto->Write();
 				}
 			}
 			
 			///Set the content for all samples
-
+			//hitHisto->Write();
 			for (unsigned sample = 0; sample < pixelHisto->GetNbinsY(); sample++) {
 				double noise = noiseHisto->GetBinContent((sample + 1));
 				if(sample > 2000) noise = noiseHisto->GetBinContent((sample - 1000));
@@ -116,7 +128,7 @@ void MapToPixels::map() {
 		///Create 2D histogram for this event
 		std::cout << "Creating ROI histogram for Run " << event.runID << " Subrun " << event.subrunID << 
                   " Event " << event.eventID << std::endl;
-		const std::string roiHistoName = "Run " + std::to_string(event.runID) + " Subrun " + std::to_string(event.subrunID) + " Event " + std::to_string(event.eventID) + " ROI";
+		const std::string roiHistoName = "Run" + std::to_string(event.runID) + "_Subrun" + std::to_string(event.subrunID) + "_Event" + std::to_string(event.eventID) + "_ROI";
 		TH2D *roiHisto = new TH2D(roiHistoName.c_str(), roiHistoName.c_str(), pixelCoordinates.getNROI(), 0, pixelCoordinates.getNROI(), pixelCoordinates.getNSamples() + 1000, 0, pixelCoordinates.getNSamples() + 1000); 
 		roiHisto->GetYaxis()->SetTitle("Time Samples");
 		roiHisto->GetXaxis()->SetTitle("ROI Channel");
@@ -240,12 +252,21 @@ void MapToPixels::find2DHits(const unsigned &t_runID,
 	///Take the given input event data hits and order according to x component 
 	///These will now be ordered in time
 	///Loop through the coordinates of this event and store results in this event's dataHitOrder multimap
+	//double indWidth = 0;
+	//double colWidth = 0;
+	//int n = 0;
 	for (auto it : t_rawHits){
 		///Convert x to time samples
 		///Digitization speed is in ns, drift speed is in us
 		double x_compInSamples = (1000*it.x)/(pixelCoordinates.getDigitizationSpeed()*pixelCoordinates.getDriftSpeed()); 
 		t_dataHitOrder.insert( std::pair<double, Hit>(x_compInSamples, it) );
+		//indWidth = indWidth + it.indHitWidth;
+		//colWidth = colWidth + it.colHitWidth;
+		//n++;
+		
 	}
+	//std::cout << "AVERAGE INDUCTION PULSE WIDTH: " << indWidth/n << std::endl;
+	//std::cout << "AVERAGE COLLECTION PULSE WIDTH: " << colWidth/n << std::endl;
 	/*for(auto it = t_dataHitOrder.begin(); it != t_dataHitOrder.end(); it++){
 			std::cout << it->first << "  " << it->second.x << "  " << it->second.z << "  " << it->second.y << "  "  << it->second.colHitPeakTime << "  " << it->second.colHitWidth << "  " << it->second.colHitADC << "  " 
 					<< it->second.indHitPeakTime << "  "  << it->second.indHitWidth << "  " << it->second.indHitADC << std::endl;
