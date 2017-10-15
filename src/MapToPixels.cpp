@@ -70,39 +70,31 @@ void MapToPixels::map() {
 	
 			///Loop through the pixel hit order for this event
 			for (auto it = event.pixelHitOrder.begin(); it != event.pixelHitOrder.end(); it++) {
+				
+				///Mean shifted by 250 to account for pre and post sample
+				double mean = it->first + 250;
+				double stdDev = it->second.colHitWidth/(2*sqrt(2*log(2)));
+				
 				///Find all IDs matching this channel
 				if (it->second.channel == channel) {
-					//std::cout << "Time: " << it->first << "    Pixel Channel: " << channel << "    ADC:" << it->second.colHitADC << "   Width: " << it->second.colHitWidth << std::endl;
 					///Fill a hit histogram
 					TRandom3 r;
-					double stdDev = it->second.colHitWidth/(2*sqrt(2*log(2)));
 					for (int i=0; i < 10000; i++) { 
-						hitHisto->Fill(r.Gaus(it->first, stdDev));
+						hitHisto->Fill(r.Gaus(mean, stdDev));
 					}
 					double scale = it->second.colHitADC/hitHisto->GetBinContent(hitHisto->GetMaximumBin());
 					for (auto sample = 0; sample < hitHisto->GetNbinsX(); sample++) {
+						///Scale to proper ADC value
 						double content = hitHisto->GetBinContent(sample + 1);
-						hitHisto->SetBinContent((sample + 1), content*scale);
+						double rescale = content*scale;
+						///Scale to noise
+						rescale = rescale*50;
+						if (mean <= 3000) hitHisto->SetBinContent((sample + 1), rescale);
 					}
-					/*TF1 *gaussian = new TF1("gaussian", "gausn", 0, hitHisto->GetNbinsX());
-					double height = it->second.colHitADC;
-					double mean = it->first;
-					double stdDev = it->second.colHitWidth/(2*sqrt(2*log(2)));
-					//std::cout << it->second.colHitWidth << std::endl;
-					gaussian->SetParameters(height, mean, stdDev);
-					hitHisto->FillRandom("gaussian", 10000);
-					double scale = height/hitHisto->GetBinContent(hitHisto->GetMaximumBin());
-					for (auto sample = 0; sample < hitHisto->GetNbinsX(); sample++) {
-						double content = hitHisto->GetBinContent(sample + 1);
-						hitHisto->SetBinContent((sample + 1), content*scale);
-					}
-					delete gaussian;*/
-					//hitHisto->Write();
 				}
 			}
 			
 			///Set the content for all samples
-			//hitHisto->Write();
 			for (unsigned sample = 0; sample < pixelHisto->GetNbinsY(); sample++) {
 				double noise = noiseHisto->GetBinContent((sample + 1));
 				if(sample > 2000) noise = noiseHisto->GetBinContent((sample - 1000));
@@ -111,9 +103,7 @@ void MapToPixels::map() {
 				hitHisto->SetBinContent(sample + 1, noiseAndHit);
 				pixelHisto->SetBinContent((channel + 1), (sample + 1), noiseAndHit);
 				if (pixelHisto->GetBinContent((channel + 1), (sample + 1)) != noiseAndHit) std::cout << "Pixel bin content error!!\n";
-
 			}
-			//hitHisto->Write();
 			delete hitHisto;
 		}
 		pixelHisto->Write();
@@ -149,23 +139,47 @@ void MapToPixels::map() {
 			
 			///Loop through the ROI hit order for this event
 			for (auto it = event.roiHitOrder.begin(); it != event.roiHitOrder.end(); it++) {
-				//std::cout << "Time: " << it->first << "   Channel: " << it->second.channel << std::endl;
+				
+				///Mean shifted by 250 to account for pre and post sample andHitDisc to make ROI pulse before pixel
+				double mean = it->first + 250 - pixelCoordinates.getHitDisc();
+				double stdDev = 0.5*(it->second.indHitWidth/(2*sqrt(2*log(2))));
+				
 				///Find all IDs matching this channel
 				if (it->second.channel == channel) {
-					
+					//std::cout << it->first << std::endl;
 					///Fill a positive hit histogram
 					TRandom3 r;
-					for (int i=0; i < 100*it->second.indHitADC; i++) { 
-						positiveHitHisto->Fill(r.Gaus(it->first - pixelCoordinates.getHitDisc(), pixelCoordinates.getWidthOfROIPulse())); 
+					for (int i=0; i < 10000; i++) { 
+						positiveHitHisto->Fill(r.Gaus(mean, stdDev)); 
 					}
-					
-					//int maxPositiveSample = (positiveHitHisto->GetMaximumBin());
-					//std::cout << it->first << "   " << maxPositiveSample << std::endl;
+					//positiveHitHisto->Write();
+					double scale = it->second.indHitADC/positiveHitHisto->GetBinContent(positiveHitHisto->GetMaximumBin());
+					///Scale to proper ADC value
+					for (auto sample = 0; sample < positiveHitHisto->GetNbinsX(); sample++) {
+						double content = positiveHitHisto->GetBinContent(sample + 1);
+						double rescale = content*scale;
+						///Scale to noise data
+						rescale = rescale*50;
+						if (mean <= 3000) positiveHitHisto->SetBinContent((sample + 1), rescale);
+					}
 					///Fill a negative hit histogram
 					TRandom3 w;
-					for (int i=0; i < 100*it->second.indHitADC; i++) { 
-						negativeHitTemp->Fill(r.Gaus(it->first - pixelCoordinates.getHitDisc() + pixelCoordinates.getROIPeakDifference(), pixelCoordinates.getWidthOfROIPulse())); ////THISSSSS
+					stdDev = 0.5*(it->second.indHitWidth/(2*sqrt(2*log(2))));
+					mean = mean + 3*stdDev;
+					for (int i=0; i < 10000; i++) { 
+						negativeHitTemp->Fill(w.Gaus(mean, stdDev)); 
 					}
+					//negativeHitTemp->Write();
+					scale = it->second.indHitADC/negativeHitTemp->GetBinContent(negativeHitTemp->GetMaximumBin());
+					///Scale to proper ADC value
+					for (auto sample = 0; sample < negativeHitTemp->GetNbinsX(); sample++) {
+						double content = negativeHitTemp->GetBinContent(sample + 1);
+						double rescale = content*scale;
+						///Scale to noise data
+						rescale = rescale*50;
+						if (mean <= 3000) negativeHitTemp->SetBinContent((sample + 1), rescale);
+					}
+					//negativeHitTemp->Write();
 					for (unsigned sample = 0; sample < negativeHitTemp->GetNbinsX(); sample++) {
 						double content = -1*negativeHitTemp->GetBinContent((sample + 1));
 						//if(content > 0) std::cout << "HEYYYYYY!!!!!! Channel " << channel << "      Content " << content << "\n";
@@ -173,10 +187,8 @@ void MapToPixels::map() {
 					}
 				}
 			}
-			//positiveHitHisto->Write();
-			//negativeHitHisto->Write();
+			
 			///Set the content for all samples
-
 			for (unsigned sample = 0; sample < roiHisto->GetNbinsY(); sample++) {
 				double noise = noiseHisto->GetBinContent((sample + 1));
 				double posHit = positiveHitHisto->GetBinContent(sample + 1);
@@ -252,9 +264,6 @@ void MapToPixels::find2DHits(const unsigned &t_runID,
 	///Take the given input event data hits and order according to x component 
 	///These will now be ordered in time
 	///Loop through the coordinates of this event and store results in this event's dataHitOrder multimap
-	//double indWidth = 0;
-	//double colWidth = 0;
-	//int n = 0;
 	for (auto it : t_rawHits){
 		///Convert x to time samples
 		///Digitization speed is in ns, drift speed is in us
@@ -280,8 +289,8 @@ void MapToPixels::find2DHits(const unsigned &t_runID,
 		convertToPCBCoordinates(iter->second.z, iter->second.y);
 	}
 	/*for(auto it = t_dataHitOrder.begin(); it != t_dataHitOrder.end(); it++){
-		std::cout << it->first << "  " << it->second.x << "  " << it->second.y << "  " << it->second.z << "  "  << it->second.colHitPeakTime << "  " << it->second.colHitWidth << "  " << it->second.colHitADC << "  " 
-			<< it->second.indHitPeakTime << "  "  << it->second.indHitWidth << "  " << it->second.indHitADC << std::endl;
+		if(it->first > 2800 || it->first < 0 && t_eventID == 4987) { std::cout << it->first << "  " << it->second.x << "  " << it->second.y << "  " << it->second.z << "  "  << it->second.colHitPeakTime << "  " << it->second.colHitWidth << "  " << it->second.colHitADC << "  " 
+			<< it->second.indHitPeakTime << "  "  << it->second.indHitWidth << "  " << it->second.indHitADC << std::endl;}
 	}
 	std::cout << std::endl;	*/
 	
@@ -291,10 +300,10 @@ void MapToPixels::find2DHits(const unsigned &t_runID,
 		convertYZToPixelUnits(it->second.z, it->second.y);
 	}
 	/*for(auto it = t_dataHitOrder.begin(); it != t_dataHitOrder.end(); it++){
-		std::cout << it->first << "  " << it->second.x << "  " << it->second.y << "  " << it->second.z << "  "  << it->second.colHitPeakTime << "  " << it->second.colHitWidth << "  " << it->second.colHitADC << "  " 
-				<< it->second.indHitPeakTime << "  "  << it->second.indHitWidth << "  " << it->second.indHitADC << std::endl;
+		if (it->first < 0 && t_eventID == 4987) {std::cout << it->first << "  " << it->second.x << "  " << it->second.y << "  " << it->second.z << "  "  << it->second.colHitPeakTime << "  " << it->second.colHitWidth << "  " << it->second.colHitADC << "  " 
+				<< it->second.indHitPeakTime << "  "  << it->second.indHitWidth << "  " << it->second.indHitADC << std::endl;}
 	}
-	std::cout << std::endl;	*/
+	std::cout << std::endl;*/	
 	
 	///Convert YZ coordinates to ROI IDs
 	convertYZToROIandPixelIDs(t_dataHitOrder, t_roiHits, t_roiHitOrder, t_pixelHits, t_pixelHitOrder);
@@ -370,9 +379,9 @@ void MapToPixels::convertYZToROIandPixelIDs(const std::multimap<double, Hit> &t_
 			t_pixelHitOrder.insert( std::pair<double, Hit2d>(it->first, pixelHit) );
 			//std::cout << "Time " << it->first << "    Y: " << it->second.y << "     Z: " << it->second.z << std::endl;
 			//std::cout << "Is matched to ROI #" << roiID  << "    Pixel #" << pixelHit.channel << std::endl;
-			/*std::cout << it->first << "  " << it->second.y << "  " << it->second.z << std::endl;//"       " << abs(fmod(it->second.y, 8)) << "  " << abs(fmod(it->second.z, 15)) << std::endl;
-			std::cout << "Pixel channel is: " << pixelHit.channel << " \n";
-			std::cout << "ROI channel is: " << roiHit.channel << "\n\n";*/
+			//std::cout << it->first << "  " << it->second.y << "  " << it->second.z << std::endl;//"       " << abs(fmod(it->second.y, 8)) << "  " << abs(fmod(it->second.z, 15)) << std::endl;
+			//std::cout << "Pixel channel is: " << pixelHit.channel << " \n";
+			//std::cout << "ROI channel is: " << roiHit.channel << "\n\n";
 		}
 	}
 };
