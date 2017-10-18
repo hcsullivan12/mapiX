@@ -40,7 +40,7 @@ void roiPaletteColors() {
 	gStyle->SetOptStat(0);
 	const Int_t NRGBs = 4;
 	const Int_t NCont = 100;
-	Double_t stops[NRGBs] = { 0.00, 0.46, 0.60, 1.00 };
+	Double_t stops[NRGBs] = { 0.00, 0.47, 0.60, 1.00 };
 	Double_t red[NRGBs]   = { 1.00, 0.00, 0.95, 1.00 };
 	Double_t green[NRGBs] = { 1.00, 0.00, 0.95, 0.00 };
 	Double_t blue[NRGBs]  = { 0.00, 0.60, 1.00, 0.00 };

@@ -137,6 +137,7 @@ void MapToPixels::map() {
 			TH1D *negativeHitHisto  = new TH1D(negName.c_str(), negName.c_str(), roiHisto->GetNbinsY(), 0, roiHisto->GetNbinsY());
 			TH1D *hitHisto          = new TH1D(hitName.c_str(), hitName.c_str(), roiHisto->GetNbinsY(), 0, roiHisto->GetNbinsY());
 			
+			
 			///Loop through the ROI hit order for this event
 			for (auto it = event.roiHitOrder.begin(); it != event.roiHitOrder.end(); it++) {
 				
