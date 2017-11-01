@@ -22,14 +22,6 @@ int main(int argc, char** argv) {
 	///Read in the spatial coordinates 
 	EventData inputData(trackFileName);
     inputData.ReadFile();
-    
-    /*auto events = inputData.getEvents();
-    for (auto event : events) {
-		for (auto hit : event.hits) {
-			std::cout << hit.x << std::endl;
-		}
-		std::cout << event.runID << " " << event.subrunID << "  " << event.eventID << std::endl;
-	}*/
 	
 	///Get the the pixel coordinates and parameters
 	PixelCoordinates pixelCoordinates(pixelCoordinatesFileName);
