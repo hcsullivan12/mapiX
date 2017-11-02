@@ -17,6 +17,12 @@ make
 ```
 ## Running mapiX
 
+Create a directory called data to store the ouput.
+
+```
+mkdir data
+```
+
 mapiX takes in a text file containing the 3D space point data. The data should be 
 formatted in 3 columns beginning with Run, Subrun, and Event, following by the space points like the following:
 
@@ -31,9 +37,13 @@ X2-coordinate , Y2-coordinate , Z2-coordinate
 .
 etc.
 ```
+
+mapiX also needs input parameters to do the mapping. Create a rapidjson file 
+that gives pertinent information.
+
 Type the following command to run the program.
 
 ```
-./mapiX [path/to/TrackData.txt]
+./mapiX [path/to/TrackData.txt] [path/to/RapidJsonFile]
 ```
 
