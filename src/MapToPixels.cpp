@@ -249,7 +249,34 @@ void MapToPixels::map() {
 		delete yzHisto;
 	}
 	
-	histogramFile.Close();
+	//histogramFile.Close();
+	
+	//std::cout << std::endl;
+	
+	/*///WRITING CHANNEL HISTOGRAMS TO DATA FILE
+	TFile *data = new TFile("../data/data.root", "RECREATE");
+	for (const auto &event : events) {
+		
+		std::cout << "Writing channel histograms for Run " << event.runID << " Subrun " << event.subrunID << " Event " << event.eventID << std::endl;
+		
+		const std::string roiHistoName = "Run" + std::to_string(event.runID) + "_Subrun" + std::to_string(event.subrunID) + "_Event" + std::to_string(event.eventID) + "_Pixels";
+		TH2D *pixelHisto = nullptr;
+		
+		histogramFile.GetObject(roiHistoName.c_str(), pixelHisto);
+		
+		if (pixelHisto == NULL) {
+			std::cout << "Could not find histogram " << roiHistoName << std::endl;
+		}
+		
+		for (unsigned channel = 0; channel < pixelHisto->GetNbinsX(); channel++) {
+			
+			TH1D *channelHisto = new TH1D("", "", pixelHisto->GetNbinsY(), 0, pixelHisto->GetNbinsY());
+			
+		}
+		
+	}*/
+	
+	
 };
 
 void MapToPixels::find2DHits(const unsigned &t_runID,

@@ -3,6 +3,10 @@
 mapiX is a software dedicated to taking reconstructed data (3d space points) 
 and converting the data to 2D histograms for pixel readout.
 
+The .json configuration file in config lists the mapping for the ROI and pixels to TPC channel numbers. The ROI and pixels coordinates are written in the following coordinate system: inside the TPC looking at the pixel PCB, the origin is located at the top left-hand corner pixel, coordinates are in units of pixels (Z = 8 means 8 pixels right), the locations of ROIs are determined by the ROI's associated top left hand corner pixel.
+
+This software does the conversion from this pixel coordinate system to the TPC coordinate system. 
+
 ## Setting environment and build mapiX
 
 In the working directory, type the following command to set the environment and build.
