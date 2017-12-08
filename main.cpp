@@ -21,7 +21,7 @@ int main(int argc, char** argv) {
 	
 	///Read in the spatial coordinates 
 	EventData inputData(trackFileName);
-    inputData.ReadFile();
+	//inputData.ReadFile();
 	
 	///Get the the pixel coordinates and parameters
 	PixelCoordinates pixelCoordinates(pixelCoordinatesFileName);
@@ -44,7 +44,7 @@ int main(int argc, char** argv) {
 	
 	///Map the coordinates to the pixels and ROI
 	MapToPixels mapToPixels(inputData, pixelCoordinates, noiseHisto);
-	mapToPixels.map();
+	mapToPixels.map();*/
 /*
 	std::cout << std::endl;
 	std::cout << "PCB side width: " << pixelCoordinates.getPCBSideWidth() << std::endl;
