@@ -18,34 +18,29 @@ void EventData::ReadFile() {
 	int eventNumber = 0;
 	while(getline(inputFile, line)) {
 		std::stringstream linestream(line);
-		std::string s;
-		getline(linestream, s, ' ');
+		std::string s1;
+		getline(linestream, s1, ' ');
 		std::string runID;
 		std::string subrunID;
 		std::string eventID;
 		
-		if (s == "====================================") {
-			//std::cout << s << std::endl;
-			continue;
-		}
-		
-		if (s == "Run") {
+		if (s1 == "Run") {
 			///In Event block
 			///Get Run, Subrun, and Event IDs
 			getline(linestream, runID);
 			
 			bool foundEvent = false;
-			std::string title;
+			std::string s2;
 			while (!foundEvent) {
 				getline(inputFile, line);
 				std::stringstream linestream(line);
-				getline(linestream, title, ' ');
-				getline(linestream, s);
-				if(title == "Subrun") {
-					subrunID = s;
+				getline(linestream, s2, ' ');
+				getline(linestream, s1);
+				if(s2 == "Subrun") {
+					subrunID = s1;
 				}
-				if(title == "Event") {
-					eventID = s;
+				if(s2 == "Event") {
+					eventID = s1;
 					foundEvent = true;
 					Event event;
 					event.runID = atoi(runID.c_str());
@@ -55,18 +50,6 @@ void EventData::ReadFile() {
 					eventNumber++;
 				}
 			}
-			//std::cout << "runID: " << runID << "  " << "SubrunID: " << subrunID << "  " << "Event: " << eventID << std::endl;
-			
-			//trackID = -1;
-			continue;
-		}
-
-		if(s == "Track") {
-			//trackID++;
-			//Track track;
-			//track.trackID = trackID;
-			//events.at(eventNumber - 1).tracks.push_back(track);
-			//std::cout << "Track: " << trackID << std::endl;
 			continue;
 		}
 		
@@ -80,7 +63,7 @@ void EventData::ReadFile() {
 		std::string indHitWidth;
 		std::string indHitADC;
 		
-		x = s;
+		x = s1;
 		getline(linestream, y, ' ');
 		getline(linestream, z, ' ');
 		getline(linestream, colHitPeakTime, ' ');
@@ -89,11 +72,6 @@ void EventData::ReadFile() {
 		getline(linestream, indHitPeakTime, ' ');
 		getline(linestream, indHitWidth, ' ');
 		getline(linestream, indHitADC);
-		
-		
-		if(atof(x.c_str()) == 0 && atof(y.c_str()) == 0 && atof(z.c_str()) == 0) {
-			continue;
-		}
 		
 		Hit rawHit;
 		rawHit.x = atof(x.c_str());
@@ -108,41 +86,6 @@ void EventData::ReadFile() {
 		
 		events.at(eventNumber - 1).rawHits.push_back(rawHit);
 	}
-		
-		/*///Get Run, Subrun, and Event IDs
-		getline(linestream, s, ',');
-		getline(linestream, y, ',');
-		getline(linestream, z);*/
-		
-/*
-		if(x == "Run" && y == " SubRun" && z == " Event") {
-                        getline(inputFile, line);
-                        std::stringstream linestream(line);
-                        std::string x;
-                        std::string y;
-                        std::string z;
-                        getline(linestream, x, ',');
-                        getline(linestream, y, ',');
-                        getline(linestream, z);
-                        event = atoi(z.c_str());
-			events.push_back(event);
-                        continue;
-		}
-		if(atof(x.c_str()) == 0 && atof(y.c_str()) == 0 && atof(z.c_str()) == 0) {
-			continue;
-		}
-
-		std::vector<double> v = {atof(x.c_str()), atof(y.c_str()), atof(z.c_str())};
-		eventMap.insert(std::make_pair(event, v));
-	}
-
-	//std::multimap<int, std::vector<double> >::const_iterator it;
-	for (const auto &event : events){
-		std::cout << "Event: " << event << std::endl;
-		for (auto it = eventMap.lower_bound(event); it != eventMap.upper_bound(event); it++) {
-			std::cout << it->second.at(0) << ", " << it->second.at(1) << ", " << it->second.at(2) << std::endl;
-		}
-	}*/
 }
 
 std::vector<Event> EventData::getEvents() const {

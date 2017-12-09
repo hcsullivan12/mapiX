@@ -42,11 +42,20 @@ int main(int argc, char** argv) {
 	if (mappingType == "pointsToPixels") {
 		///Read in the spatial coordinates 
 		EventData inputData(inputFileName);
-		//inputData.ReadFile();
+		inputData.ReadFile();
+		
+		auto events = inputData.getEvents();
+		std::cout << "Received data from ...\n\n";
+		for (auto it = events.begin(); it != events.end(); it++) {
+			std::cout << "Run: " << it->runID << std::endl;
+			std::cout << "Subrun: " << it->subrunID << std::endl;
+			std::cout << "Event: " << it->eventID << std::endl;
+			std::cout << std::endl;
+		}
 		
 		///Map the coordinates to the pixels and ROI
 		MapToPixels mapToPixels(inputData, pixelCoordinates, noiseHisto);
-		//mapToPixels.map();
+		mapToPixels.map();
 			
 	} else {
 		if (mappingType == "channelsToPixels") {
@@ -58,7 +67,7 @@ int main(int argc, char** argv) {
 		}
 	}
 	
-	/*
+	
 	std::cout << std::endl;
 	std::cout << "PCB side width: " << pixelCoordinates.getPCBSideWidth() << std::endl;
 	std::cout << "Pixel region width: " << pixelCoordinates.getPixelRegionWidth() << std::endl;
@@ -69,5 +78,5 @@ int main(int argc, char** argv) {
 	std::cout << "Number of samples: " << pixelCoordinates.getNSamples() << std::endl;
 	std::cout << "Y limit: " << -1*(pixelCoordinates.getPixelRegionHeight() - pixelCoordinates.getPixelPitch()/2)/pixelCoordinates.getPixelPitch() << std::endl;
 	std::cout << "Z limit: " << (pixelCoordinates.getPixelRegionWidth() - pixelCoordinates.getPixelPitch()/2)/pixelCoordinates.getPixelPitch() <<  std::endl;
-	*/
+	
 }
