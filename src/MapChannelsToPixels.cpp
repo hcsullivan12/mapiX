@@ -1,4 +1,4 @@
-#include "MapToPixels.h"
+#include "MapChannelsToPixels.h"
 #include "math.h"
 #include <fstream>
 #include "TFile.h"
@@ -9,12 +9,13 @@
 #include <TStyle.h>
 
 
-MapToPixels::MapToPixels(const EventData &t_inputData, const PixelCoordinates &t_pixelCoordinates, TH1D *t_noiseHisto) : 
-		inputData(t_inputData), pixelCoordinates(t_pixelCoordinates), noiseHisto(t_noiseHisto) {
+MapChannelsToPixels::MapChannelsToPixels(const ChannelData &t_inputData, const PixelCoordinates &t_pixelCoordinates, TH1D *t_noiseHisto, 
+										const std::multimap< unsigned, std::pair<std::string, unsigned> > &t_lariatChannelToPCB, const std::string t_outputFile) : 
+		inputData(t_inputData), pixelCoordinates(t_pixelCoordinates), noiseHisto(t_noiseHisto), lariatChannelToPCB(t_lariatChannelToPCB), outputFile(t_outputFile) {
 		
 };
 
-void MapToPixels::map() {
+void MapChannelsToPixels::map() {
 
 	events.clear();
 	events.resize(inputData.getEvents().size());
@@ -48,7 +49,9 @@ void MapToPixels::map() {
 	std::cout << std::endl;
 	
 	///BUILDING PIXEL HISTOGRAMS
-	TFile histogramFile("../data/Histograms.root", "RECREATE");
+	std::string outputFilePath = "../data/" + outputFile;
+	TFile histogramFile(outputFilePath.c_str(), "RECREATE");
+	
 	///Loop through events
 	for (const auto &event : events) {
 		
@@ -73,22 +76,24 @@ void MapToPixels::map() {
 				
 				///Mean shifted by 250 to account for pre and post sample
 				double mean = it->first + 250;
-				double stdDev = it->second.colHitWidth/(2*sqrt(2*log(2)));
+				double stdDev = it->second.hitWidth/(2*sqrt(2*log(2)));
+				//std::cout << "Channel: " << it->second.hitChannelNumber << "    time: " << it->first << "   hitWidth: " << it->second.hitWidth << std::endl;
 				
 				///Find all IDs matching this channel
-				if (it->second.channel == channel) {
+				if (it->second.hitChannelNumber == channel) {
+					//std::cout << "Channel: " << it->second.hitChannelNumber << "    time: " << it->first << "   hitWidth: " << it->second.hitWidth;
 					///Fill a hit histogram
 					TRandom3 r;
 					for (int i=0; i < 10000; i++) { 
 						hitHisto->Fill(r.Gaus(mean, stdDev));
 					}
-					double scale = it->second.colHitADC/hitHisto->GetBinContent(hitHisto->GetMaximumBin());
+					double scale = it->second.hitADC/hitHisto->GetBinContent(hitHisto->GetMaximumBin());
 					for (auto sample = 0; sample < hitHisto->GetNbinsX(); sample++) {
 						///Scale to proper ADC value
 						double content = hitHisto->GetBinContent(sample + 1);
 						double rescale = content*scale;
 						///Scale to noise
-						rescale = rescale*50;
+						rescale = rescale*100;
 						if (mean <= 3000) hitHisto->SetBinContent((sample + 1), rescale);
 					}
 				}
@@ -139,14 +144,14 @@ void MapToPixels::map() {
 			
 			
 			///Loop through the ROI hit order for this event
-			for (auto it = event.roiHitOrder.begin(); it != event.roiHitOrder.end(); it++) {
+			for (auto it = event.roiHits.begin(); it != event.roiHits.end(); it++) {
 				
 				///Mean shifted by 250 to account for pre and post sample andHitDisc to make ROI pulse before pixel
-				double mean = it->first + 250 - pixelCoordinates.getHitDisc();
-				double stdDev = 0.5*(it->second.indHitWidth/(2*sqrt(2*log(2))));
+				double mean = it->hitPeakTime + 250 - pixelCoordinates.getHitDisc();
+				double stdDev = 0.5*(it->hitADC/(2*sqrt(2*log(2))));
 				
 				///Find all IDs matching this channel
-				if (it->second.channel == channel) {
+				if (it->hitChannelNumber == channel) {
 					//std::cout << it->first << std::endl;
 					///Fill a positive hit histogram
 					TRandom3 r;
@@ -154,30 +159,30 @@ void MapToPixels::map() {
 						positiveHitHisto->Fill(r.Gaus(mean, stdDev)); 
 					}
 					//positiveHitHisto->Write();
-					double scale = it->second.indHitADC/positiveHitHisto->GetBinContent(positiveHitHisto->GetMaximumBin());
+					double scale = it->hitADC/positiveHitHisto->GetBinContent(positiveHitHisto->GetMaximumBin());
 					///Scale to proper ADC value
 					for (auto sample = 0; sample < positiveHitHisto->GetNbinsX(); sample++) {
 						double content = positiveHitHisto->GetBinContent(sample + 1);
 						double rescale = content*scale;
 						///Scale to noise data
-						rescale = rescale*50;
+						rescale = rescale*1000;
 						if (mean <= 3000) positiveHitHisto->SetBinContent((sample + 1), rescale);
 					}
 					///Fill a negative hit histogram
 					TRandom3 w;
-					stdDev = 0.5*(it->second.indHitWidth/(2*sqrt(2*log(2))));
+					stdDev = 0.5*(it->hitWidth/(2*sqrt(2*log(2))));
 					mean = mean + 3*stdDev;
 					for (int i=0; i < 10000; i++) { 
 						negativeHitTemp->Fill(w.Gaus(mean, stdDev)); 
 					}
 					//negativeHitTemp->Write();
-					scale = it->second.indHitADC/negativeHitTemp->GetBinContent(negativeHitTemp->GetMaximumBin());
+					scale = it->hitWidth/negativeHitTemp->GetBinContent(negativeHitTemp->GetMaximumBin());
 					///Scale to proper ADC value
 					for (auto sample = 0; sample < negativeHitTemp->GetNbinsX(); sample++) {
 						double content = negativeHitTemp->GetBinContent(sample + 1);
 						double rescale = content*scale;
 						///Scale to noise data
-						rescale = rescale*50;
+						rescale = rescale*1000;
 						if (mean <= 3000) negativeHitTemp->SetBinContent((sample + 1), rescale);
 					}
 					//negativeHitTemp->Write();
@@ -214,7 +219,7 @@ void MapToPixels::map() {
 	}
 	std::cout << std::endl;
 	
-	///BUILDING YZ PLOTS
+	/*///BUILDING YZ PLOTS
 	///Loop through events
 	for (const auto &event : inputData.getEvents()) {
 		
@@ -247,7 +252,7 @@ void MapToPixels::map() {
 		
 		yzHisto->Write();
 		delete yzHisto;
-	}
+	}*/
 	
 	//histogramFile.Close();
 	
@@ -279,7 +284,7 @@ void MapToPixels::map() {
 	
 };
 
-void MapToPixels::find2DHits(const unsigned &t_runID,
+void MapChannelsToPixels::find2DHits(const unsigned &t_runID,
  				 const unsigned &t_subrunID,
  			     const unsigned &t_eventID, 
  			     const std::vector<Hit> &t_rawHits,
@@ -289,152 +294,53 @@ void MapToPixels::find2DHits(const unsigned &t_runID,
                  std::multimap<double, Hit2d> &t_roiHitOrder,
 			     std::multimap<double, Hit> &t_dataHitOrder) {
 					 
-	///Take the given input event data hits and order according to x component 
-	///These will now be ordered in time
-	///Loop through the coordinates of this event and store results in this event's dataHitOrder multimap
-	for (auto it : t_rawHits){
-		///Convert x to time samples
-		///Digitization speed is in ns, drift speed is in us
-		double x_compInSamples = (1000*it.x)/(pixelCoordinates.getDigitizationSpeed()*pixelCoordinates.getDriftSpeed()); 
-		t_dataHitOrder.insert( std::pair<double, Hit>(x_compInSamples, it) );
-		//indWidth = indWidth + it.indHitWidth;
-		//colWidth = colWidth + it.colHitWidth;
-		//n++;
+					 
+	///Take channels from rawhits and convert to pixel hit or ROI hit with 
+	///the help of the channel mapping
+	for (auto it : t_rawHits) {
+		///Get channel
+		unsigned lariatChannel = it.hitChannelNumber;
 		
-	}
-	//std::cout << "AVERAGE INDUCTION PULSE WIDTH: " << indWidth/n << std::endl;
-	//std::cout << "AVERAGE COLLECTION PULSE WIDTH: " << colWidth/n << std::endl;
-	/*for(auto it = t_dataHitOrder.begin(); it != t_dataHitOrder.end(); it++){
-			std::cout << it->first << "  " << it->second.x << "  " << it->second.z << "  " << it->second.y << "  "  << it->second.colHitPeakTime << "  " << it->second.colHitWidth << "  " << it->second.colHitADC << "  " 
-					<< it->second.indHitPeakTime << "  "  << it->second.indHitWidth << "  " << it->second.indHitADC << std::endl;
-	}
-	std::cout << std::endl;*/
-	
-	//std::cout << "PCB Origin: " << "Z ---> " << pixelCoordinates.getPCBOrigin().at(0) << "  Y ----> " << pixelCoordinates.getPCBOrigin().at(1) << std::endl;
-	
-	///Convert coordinates relative to PCB origin (y, z)
-	for(auto iter = t_dataHitOrder.begin(); iter != t_dataHitOrder.end(); iter++){
-		convertToPCBCoordinates(iter->second.z, iter->second.y);
-	}
-	/*for(auto it = t_dataHitOrder.begin(); it != t_dataHitOrder.end(); it++){
-		if(it->first > 2800 || it->first < 0 && t_eventID == 4987) { std::cout << it->first << "  " << it->second.x << "  " << it->second.y << "  " << it->second.z << "  "  << it->second.colHitPeakTime << "  " << it->second.colHitWidth << "  " << it->second.colHitADC << "  " 
-			<< it->second.indHitPeakTime << "  "  << it->second.indHitWidth << "  " << it->second.indHitADC << std::endl;}
-	}
-	std::cout << std::endl;	*/
-	
-	///Convert YZ coordinates to units of pixel pitch
-	///std::cout << "In units of pixel pitch\n";
-	for(auto it = t_dataHitOrder.begin(); it != t_dataHitOrder.end(); it++) {
-		convertYZToPixelUnits(it->second.z, it->second.y);
-	}
-	/*for(auto it = t_dataHitOrder.begin(); it != t_dataHitOrder.end(); it++){
-		if (it->first < 0 && t_eventID == 4987) {std::cout << it->first << "  " << it->second.x << "  " << it->second.y << "  " << it->second.z << "  "  << it->second.colHitPeakTime << "  " << it->second.colHitWidth << "  " << it->second.colHitADC << "  " 
-				<< it->second.indHitPeakTime << "  "  << it->second.indHitWidth << "  " << it->second.indHitADC << std::endl;}
-	}
-	std::cout << std::endl;*/	
-	
-	///Convert YZ coordinates to ROI IDs
-	convertYZToROIandPixelIDs(t_dataHitOrder, t_roiHits, t_roiHitOrder, t_pixelHits, t_pixelHitOrder);
-
-	/*for(auto iter = t_dataHitOrder.begin(); iter != t_dataHitOrder.end(); iter++){
-		std::cout << iter->first << "  " <<iter->second.first << "  " << iter->second.second << "       " << abs(fmod(iter->second.first, 8)) << "  " << abs(fmod(iter->second.second, 15)) << std::endl;
-	}
-	std::cout << std::endl;*/
-
-};
-
-void MapToPixels::convertYZToPixelUnits(double &z, double &y) {
-	
-	///Divide by the pixel pitch (in cm)
-	y = y/pixelCoordinates.getPixelPitch();
-	z = z/pixelCoordinates.getPixelPitch();
-
-	///Round to nearest pixel
-	y = static_cast<int>(round(y));
-	z = static_cast<int>(round(z));
-};
-
-void MapToPixels::convertYZToROIandPixelIDs(const std::multimap<double, Hit> &t_dataHitOrder, 
-				    std::vector<Hit2d> &t_roiHits, std::multimap<double, Hit2d> &t_roiHitOrder,
-				    std::vector<Hit2d> &t_pixelHits, std::multimap<double, Hit2d> &t_pixelHitOrder) {
-	///Loop through all the hits
-	///Check to make sure the pixels can see hit
-	for (auto it = t_dataHitOrder.begin(); it != t_dataHitOrder.end(); it++){
+		///Identify if this is a pixel or ROI from channel map
+		std::string type = lariatChannelToPCB.find( lariatChannel )->second.first;
+		unsigned ID =  lariatChannelToPCB.find( lariatChannel )->second.second;
 		
-		if(!pcbCanSee(it->second.z, it->second.y, false)) {
-			//std::cout << "Skipping: " << it->second.first << "  " << it->second.second << std::endl;
-			continue;
-		}
-		else {
-			
-			///Loop through the ROI Coordinates
-			unsigned ID = 0;
-			unsigned roiID = 0;
-			bool foundID = false;
-			
-			auto roiCoor = pixelCoordinates.getROICoor();
-			
-			while(!foundID) {
-				///Entry: First is Y, Second is Z        roiCoor: 0 is Y, 1 is Z
-				///Y condition                                    Z condition
-				//std::cout << "IN WHILE LOOP " << roiCoor.at(ID).at(0) << " >= " << it->second.first << " > " << roiCoor.at(ID).at(0) - 8 <<  "\n";
-				if((roiCoor.at(ID).at(0) >= it->second.y && it->second.y > (roiCoor.at(ID).at(0) - 8)) && 
-				   (roiCoor.at(ID).at(1) <= it->second.z && it->second.z < (roiCoor.at(ID).at(1) + 15))){
-					//std::cout << "IN IF STATEMENT!\n";
-					roiID = ID;
-					foundID = true;
-				}
-				
-				ID++;
-			}
-			
-			///ID is found, build a hit 
-			Hit2d roiHit;
-			roiHit.channel = roiID;
-			roiHit.indHitPeakTime = it->second.indHitPeakTime;
-			roiHit.indHitWidth = it->second.indHitWidth;
-			roiHit.indHitADC = it->second.indHitADC;
-			t_roiHits.push_back(roiHit);
-			t_roiHitOrder.insert( std::pair<double, Hit2d>(it->first, roiHit) );
-			
-			Hit2d pixelHit;
-			pixelHit.channel = 15*abs(fmod(it->second.y, 8)) + abs(fmod(it->second.z, 15));
-			if (it->second.z >= 120) pixelHit.channel = pixelHit.channel + 120; 
-			pixelHit.colHitPeakTime = it->second.colHitPeakTime;
-			pixelHit.colHitWidth = it->second.colHitWidth;
-			pixelHit.colHitADC = it->second.colHitADC;
+		//std::cout << "Current channel: " << it.hitChannelNumber << "   " << type << ID << std::endl;
+		
+		if (type == "pixel") {
+			//std::cout << "Found pixel\n";
+			///Create pixel hit
+			Hit2d pixelHit; 
+			pixelHit.hitChannelNumber = ID;
+			pixelHit.hitPeakTime = it.hitPeakTime;
+			pixelHit.hitADC = it.hitADC;
+			pixelHit.hitWidth = it.hitWidth;
 			t_pixelHits.push_back(pixelHit);
-			t_pixelHitOrder.insert( std::pair<double, Hit2d>(it->first, pixelHit) );
-			//std::cout << "Time " << it->first << "    Y: " << it->second.y << "     Z: " << it->second.z << std::endl;
-			//std::cout << "Is matched to ROI #" << roiID  << "    Pixel #" << pixelHit.channel << std::endl;
-			//std::cout << it->first << "  " << it->second.y << "  " << it->second.z << std::endl;//"       " << abs(fmod(it->second.y, 8)) << "  " << abs(fmod(it->second.z, 15)) << std::endl;
-			//std::cout << "Pixel channel is: " << pixelHit.channel << " \n";
-			//std::cout << "ROI channel is: " << roiHit.channel << "\n\n";
+			t_pixelHitOrder.insert( std::pair<double, Hit2d>(it.hitPeakTime, pixelHit) );
+			//std::cout << "Pixel" << "      hitPeakTime: " << it.hitPeakTime << "   hitChannelNumber: " << it.hitChannelNumber << "    hitADC: " << it.hitADC << "   hitWidth: " << it.hitWidth << std::endl;  
+		} else {
+			if ("ROI") {
+				//std::cout << "Found ROI\n";
+				///Create ROI hit
+				Hit2d roiHit;
+				roiHit.hitChannelNumber = ID;
+				roiHit.hitPeakTime = it.hitPeakTime;
+				roiHit.hitADC = it.hitADC;
+				roiHit.hitWidth = it.hitWidth;
+				t_roiHits.push_back(roiHit);
+				t_roiHitOrder.insert( std::pair<double, Hit2d>(it.hitPeakTime, roiHit) );
+				//std::cout << "ROI " << ID << "      hitPeakTime: " << it.hitPeakTime << "    hitADC: " << it.hitADC << "   hitWidth: " << it.hitWidth << std::endl;  
+				
+			} else {
+				std::cout << "ERROR! Could not identify pixel or ROI.\n\n";
+				exit(1);
+			}
 		}
 	}
+	
+	for (auto it = t_roiHitOrder.begin(); it != t_roiHitOrder.end(); it++) {
+		std::cout << "ROI" << it->second.hitChannelNumber << "    PeakTime: " << it->first <<  std::endl;  
+	}
+
 };
 
-void MapToPixels::convertToPCBCoordinates(double &z, double &y) {
-	///Z component
-	z = z - pixelCoordinates.getPCBOrigin().at(0);
-	///Y component
-	y = y - pixelCoordinates.getPCBOrigin().at(1);
-}
-
-bool MapToPixels::pcbCanSee(const double &z, const double &y, bool tpcCoor) {
-	
-	double zPrime = z;
-	double yPrime = y;
-	
-	if (tpcCoor) {
-		convertToPCBCoordinates(zPrime, yPrime);
-	}
-	if (yPrime > 0 || zPrime < 0 || 
-		yPrime < -1*(pixelCoordinates.getPixelRegionHeight() - pixelCoordinates.getPixelPitch()/2)/pixelCoordinates.getPixelPitch() || 
-		zPrime > (pixelCoordinates.getPixelRegionWidth() - pixelCoordinates.getPixelPitch()/2)/pixelCoordinates.getPixelPitch()) {
-	
-		return false;
-	}
-	return true;
-	
-}

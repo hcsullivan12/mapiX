@@ -1,15 +1,15 @@
-#ifndef MAPTOPIXELS_H
-#define MAPTOPIXELS_H
+#ifndef MAPCOORDINATESTOPIXELS_H
+#define MAPCOORDINATESTOPIXELS_H
 
 #include "Event.h"
 #include "EventData.h"
 #include "PixelCoordinates.h"
 #include "TH1.h"
 
-class MapToPixels {
+class MapCoordinatesToPixels {
 
 	public:
-		MapToPixels(const EventData &t_inputData, const PixelCoordinates &t_pixelCoordinates, TH1D *t_noiseHisto);
+		MapCoordinatesToPixels(const EventData &t_inputData, const PixelCoordinates &t_pixelCoordinates, TH1D *t_noiseHisto, const std::string t_outputFile);
 		void map();
 		
 
@@ -18,6 +18,7 @@ class MapToPixels {
 		const EventData &inputData;
 		const PixelCoordinates &pixelCoordinates;
 		const TH1D *noiseHisto;
+		const std::string outputFile;
 
 		void find2DHits(const unsigned &t_runID,
 				 const unsigned &t_subrunID,
@@ -35,11 +36,5 @@ class MapToPixels {
         void convertToPCBCoordinates(double &z, double &y);
 		bool pcbCanSee(const double &z, const double &y, bool tpcCoor);
 };
-
-
-
-
-
-
 
 #endif

@@ -1,5 +1,5 @@
-void roiPaletteColors() {
-	TFile *f = new TFile("../data/pointMapping.root", "READ");
+void roiPaletteColors2() {
+	TFile *f = new TFile("../data/channelMapping.root", "READ");
 	
 	TH2D *h1 = nullptr;
 	f->GetObject("Run9102_Subrun54_Event4986_ROI", h1);
@@ -40,7 +40,7 @@ void roiPaletteColors() {
 	gStyle->SetOptStat(0);
 	const Int_t NRGBs = 4;
 	const Int_t NCont = 100;
-	Double_t stops[NRGBs] = { 0.00, 0.5, 0.60, 1.00 };
+	Double_t stops[NRGBs] = { 0.00, 0.6, 0.65, 1.00 };
 	Double_t red[NRGBs]   = { 1.00, 0.00, 0.95, 1.00 };
 	Double_t green[NRGBs] = { 1.00, 0.00, 0.95, 0.00 };
 	Double_t blue[NRGBs]  = { 0.00, 0.60, 1.00, 0.00 };

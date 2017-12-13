@@ -5,22 +5,29 @@
 #include <vector>
 
 struct Hit2d {
-        ///
-        /// Pixel channel.
-        ///
-        unsigned channel;
-
-        double colHitPeakTime;
 	
-		double colHitWidth;
+	unsigned channel;
 	
-		double colHitADC;
+	double colHitPeakTime;
 	
-		double indHitPeakTime;
+	double colHitWidth;
 	
-		double indHitWidth;
+	double colHitADC;
 	
-		double indHitADC;
+	double indHitPeakTime;
+	
+	double indHitWidth;
+	
+	double indHitADC;
+		
+	///Variables used for ChannelsToPixels
+	unsigned hitChannelNumber;
+	
+	double hitPeakTime;
+	
+	double hitADC;
+	
+	double hitWidth;
 
 };
 
@@ -66,6 +73,7 @@ struct PrincipalComponents {
 
 struct Hit {
 	
+	///Variables used for CoordinatesToPixels
 	unsigned channel;
 	
 	double x;
@@ -85,6 +93,16 @@ struct Hit {
 	double indHitWidth;
 	
 	double indHitADC;
+	
+	///Variables used for ChannelsToPixels
+	unsigned hitChannelNumber;
+	
+	double hitPeakTime;
+	
+	double hitADC;
+	
+	double hitWidth;
+	
 };
 
 struct Event {
@@ -159,15 +177,6 @@ struct Event {
     /// Has the same dimensions as pixel2roi.
     ///
     std::vector<std::vector<Hit3d>> hitCandidates;
-
-    std::vector<int> pcaIds;
-
-    PrincipalComponents principalComponents;
-        
-        /*///
-        /// Vector holding all track information
-        ///
-        std::vector<Track> tracks;*/
 };
 
 #endif
