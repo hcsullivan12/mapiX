@@ -21,26 +21,27 @@ int main(int argc, char** argv) {
 	
 	///Read in the spatial coordinates 
 	EventData inputData(trackFileName);
-	//inputData.ReadFile();
+	inputData.ReadFile();
 	
 	///Get the the pixel coordinates and parameters
 	PixelCoordinates pixelCoordinates(pixelCoordinatesFileName);
 	
-	///Get noise data from pixy histograms
-    TFile noiseDataRootFile("/home/hunter/projects/pixy/data/FilteredHistograms.root", "READ");
-    if (!noiseDataRootFile.IsOpen()) {
-        std::cerr << "ERROR: Failed to open noise data file!" << std::endl;
-        exit(1);
-    }
-    TH1D* noiseHisto = nullptr;
-    noiseDataRootFile.GetObject("Event218_PixelChannel0", noiseHisto);
-    if (!noiseHisto) {
-        std::cerr << "ERROR: Failed to find histo!" << std::endl;
-        exit(1);
-    }
-	TFile noiseData("/home/hunter/projects/mapiX/data/NoiseData.root", "RECREATE");
+	///Get noise data from sample noise histogram
+    	TFile noiseDataRootFile("../NoiseData.root", "READ");
+ 	if (!noiseDataRootFile.IsOpen()) {
+        	std::cerr << "ERROR: Failed to open noise data file!" << std::endl;
+	        exit(1);
+	}
+	
+	TH1D* noiseHisto = nullptr;
+	noiseDataRootFile.GetObject("Event218_PixelChannel0", noiseHisto);
+	if (!noiseHisto) {
+		std::cerr << "ERROR: Failed to find histo!" << std::endl;
+	        exit(1);
+	}
+/*	TFile noiseData("/home/hunter/projects/mapiX/data/NoiseData.root", "RECREATE");
 	noiseHisto->Write();
-	noiseData.Close();
+	noiseData.Close();*/
 	
 	///Map the coordinates to the pixels and ROI
 	MapToPixels mapToPixels(inputData, pixelCoordinates, noiseHisto);
