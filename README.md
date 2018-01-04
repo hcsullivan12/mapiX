@@ -33,8 +33,8 @@ formatted in space delimited columns beginning with Run, Subrun, and Event, foll
 Run 6258
 Subrun 189
 Event 9319
-X1-coordinate Y1-coordinate Z1-coordinate collectionHitPeakTime collectionHitWidth ColHitADC inductionHitPeakTime inductionHitWidth indHitADC
-X2-coordinate Y2-coordinate Z2-coordinate
+X1 Y1 Z1 CollectionHitPeakTime CollectionHitWidth ColHitADC InductionHitPeakTime InductionHitWidth InductionHitADC
+X2 Y2 Z2 collectionHitPeakTime CollectionHitWidth CollectionHitADC InductionHitPeakTime InductionHitWidth InductionHitADC
 .
 .
 .
@@ -42,11 +42,11 @@ etc.
 ```
 
 mapiX also needs input parameters to do the mapping. Create a rapidjson file 
-that gives pertinent information.
+that gives pertinent information. Sample rapidjson and track files are included in config.
 
 Type the following command to run the program.
 
 ```
-./mapiX [path/to/TrackData.txt] [path/to/RapidJsonFile]
+./mapiX [path/to/TrackFile.txt] [path/to/RapidJsonFile]
 ```
 
