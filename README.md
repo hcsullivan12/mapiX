@@ -1,7 +1,6 @@
 # mapiX
 
-mapiX is a software dedicated to taking reconstructed data (3d space points) 
-and converting the data to 2D histograms for pixel readout.
+mapiX is a software dedicated to mapping Geant4 simulation or reconstructed data (3d space points) and to pixel space. This specifically uses the ROI multiplexing technique but is easily configurable to different readout schemes.
 
 The .json configuration file in config lists the mapping for the ROI and pixels to TPC channel numbers. The ROI and pixels coordinates are written in the following coordinate system: inside the TPC looking at the pixel PCB, the origin is located at the top left-hand corner pixel, coordinates are in units of pixels (Z = 8 means 8 pixels right), the locations of ROIs are determined by the ROI's associated top left hand corner pixel.
 
@@ -28,13 +27,13 @@ mkdir output
 ```
 
 mapiX takes in a text file containing the 3D space point data. The data should be 
-formatted in 3 columns beginning with Run, Subrun, and Event, followed by the space points like the following:
+formatted in space delimited columns beginning with Run, Subrun, and Event, followed by the space point information like the following:
 
 ```
 Run 6258
 Subrun 189
 Event 9319
-X1-coordinate Y1-coordinate Z1-coordinate
+X1-coordinate Y1-coordinate Z1-coordinate collectionHitPeakTime collectionHitWidth ColHitADC inductionHitPeakTime inductionHitWidth indHitADC
 X2-coordinate Y2-coordinate Z2-coordinate
 .
 .
