@@ -21,7 +21,7 @@ int main(int argc, char** argv) {
 	
 	///Read in the spatial coordinates 
 	EventData inputData(trackFileName);
-    inputData.ReadFile();
+	//inputData.ReadFile();
 	
 	///Get the the pixel coordinates and parameters
 	PixelCoordinates pixelCoordinates(pixelCoordinatesFileName);
