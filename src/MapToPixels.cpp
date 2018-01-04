@@ -48,7 +48,7 @@ void MapToPixels::map() {
 	std::cout << std::endl;
 	
 	///BUILDING PIXEL HISTOGRAMS
-	TFile histogramFile("../data/Histograms.root", "RECREATE");
+	TFile histogramFile("../output/Histograms.root", "RECREATE");
 	///Loop through events
 	for (const auto &event : events) {
 		
