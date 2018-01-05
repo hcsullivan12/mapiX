@@ -82,6 +82,10 @@ class PixelCoordinates {
 		std::vector<std::vector<int>> getROICoor() const {
 			return roiCoor;
 		}
+	
+		double getPCBLength() const {
+			return pcbLength;
+		}
 
 		double getPCBSideWidth() const {
             		return pcbSideWidth;
@@ -116,6 +120,8 @@ class PixelCoordinates {
 		unsigned nPixelsPerPCB;
 
 		unsigned nROIs;
+
+		double pcbLength;
 
 		double pcbSideWidth;
 

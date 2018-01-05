@@ -27,7 +27,8 @@ PixelCoordinates::PixelCoordinates(const std::string pixelCoordinatesFileName) {
             tpcOrigin.push_back(jsonArrayItr->GetDouble());
             ++jsonArrayItr;
         }
-	
+
+	pcbLength            = getJsonMember("pcbLength", rapidjson::kNumberType).GetDouble(); //cm	
 	pcbSideWidth         = getJsonMember("pcbSideWidth", rapidjson::kNumberType).GetDouble(); //cm
 	pixelRegionWidth     = getJsonMember("pixelRegionWidth", rapidjson::kNumberType).GetDouble(); //cm
 	pixelRegionHeight    = getJsonMember("pixelRegionHeight", rapidjson::kNumberType).GetDouble();	//cm
@@ -45,8 +46,8 @@ PixelCoordinates::PixelCoordinates(const std::string pixelCoordinatesFileName) {
 	tpcWidth    = getJsonMember("tpcWidth", rapidjson::kNumberType).GetDouble();
 	tpcHeight    = getJsonMember("tpcHeight", rapidjson::kNumberType).GetDouble();
 	
-	pcbOrigin.push_back(pcbSideWidth + pixelPitch/2);            //z
-	pcbOrigin.push_back(pixelRegionHeight/2 - pixelPitch/2);     //y
+	pcbOrigin.push_back( pcbSideWidth - (pcbLength - tpcLength)/2 + pixelPitch/2);  //z
+	pcbOrigin.push_back(pixelRegionHeight/2 - pixelPitch/2);                        //y
 	
 
 	///Pixel Coordinates (Y, Z)
