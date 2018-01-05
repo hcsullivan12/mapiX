@@ -3,11 +3,13 @@
 #include <fstream>
 #include "TFile.h"
 #include "TH2.h"
+#include "TH3.h"
 #include "TH1.h"
+#include "TNtuple.h"
 #include "TF1.h"
 #include "TRandom3.h"
 #include <TStyle.h>
-
+#include "TGraph2D.h"
 
 MapToPixels::MapToPixels(const EventData &t_inputData, const PixelCoordinates &t_pixelCoordinates, TH1D *t_noiseHisto) : 
 		inputData(t_inputData), pixelCoordinates(t_pixelCoordinates), noiseHisto(t_noiseHisto) {
@@ -214,79 +216,47 @@ void MapToPixels::map() {
 	}
 	std::cout << std::endl;
 	
-	///BUILDING YZ PLOTS
+	/*///BUILDING YZ PLOTS
 	///Loop through events
 	for (const auto &event : inputData.getEvents()) {
 		
 		///Create 2D histogram for this event
 		std::cout << "Creating YZ histogram for Run " << event.runID << " Subrun " << event.subrunID << 
                   " Event " << event.eventID << std::endl;
-		const std::string yzHistoName = "Run " + std::to_string(event.runID) + " Subrun " + std::to_string(event.subrunID) + " Event " + std::to_string(event.eventID);
-		TH2D *yzHisto = new TH2D(yzHistoName.c_str(), yzHistoName.c_str(), 90, 0, 90, 40, -20, 20); 
-		yzHisto->GetYaxis()->SetTitle("Y (cm)");
-		yzHisto->GetXaxis()->SetTitle("Z (cm)");
+		const std::string xyzName = "Run " + std::to_string(event.runID) + " Subrun " + std::to_string(event.subrunID) + " Event " + std::to_string(event.eventID);
 		
+		//TNtuple *xyzHisto = new TNtuple(yzHistoName.c_str(), yzHistoName.c_str(), "x:y:z:color");
+		//TH2D *xyzHisto = new TH2D(yzHistoName.c_str(), yzHistoName.c_str(), 90, 0, 90, 40, -20, 20); 
+ 		TH3F *xyzHisto = new TH3F(xyzName.c_str(), xyzName.c_str(), 500, 0, pixelCoordinates.getTPCLength(), 500, 0, pixelCoordinates.getTPCWidth(), 500, -pixelCoordinates.getTPCHeight(), pixelCoordinates.getTPCHeight());   
+		xyzHisto->GetYaxis()->SetTitle("X (cm)");
+		xyzHisto->GetXaxis()->SetTitle("Z (cm)");
+		xyzHisto->GetZaxis()->SetTitle("Y (cm)");		
+	
 		for (auto it = event.rawHits.begin(); it != event.rawHits.end(); it++) {
-			//std::cout << it->second.z << "  " << it->second.y << std::endl;
-			//auto noise = noiseHisto->GetBinContent((sample + 1));
-			//auto noiseAndHit = noise + 100*it->second.colHitADC;
-			for (int i = 0; i < 100; i++) {
-			
-				if (pcbCanSee(it->z, it->y, true)) {
-					yzHisto->SetMarkerStyle(kBlack);
-					yzHisto->Fill(it->z, it->y);
-				}
-				else {
-					yzHisto->SetMarkerStyle(kRed);
-					yzHisto->Fill(it->z,it->y);
-					
-				}
+			if (pcbCanSee(it->z, it->y, true)) {
+				//yzHisto->SetMarkerStyle(kBlack);
+				xyzHisto->Fill(it->z, it->x, it->y);
 			}
-			//sample++;
-		}
-		
-		yzHisto->Write();
-		delete yzHisto;
-	}
-	
-	//histogramFile.Close();
-	
-	//std::cout << std::endl;
-	
-	/*///WRITING CHANNEL HISTOGRAMS TO DATA FILE
-	TFile *data = new TFile("../data/data.root", "RECREATE");
-	for (const auto &event : events) {
-		
-		std::cout << "Writing channel histograms for Run " << event.runID << " Subrun " << event.subrunID << " Event " << event.eventID << std::endl;
-		
-		const std::string roiHistoName = "Run" + std::to_string(event.runID) + "_Subrun" + std::to_string(event.subrunID) + "_Event" + std::to_string(event.eventID) + "_Pixels";
-		TH2D *pixelHisto = nullptr;
-		
-		histogramFile.GetObject(roiHistoName.c_str(), pixelHisto);
-		
-		if (pixelHisto == NULL) {
-			std::cout << "Could not find histogram " << roiHistoName << std::endl;
-		}
-		
-		for (unsigned channel = 0; channel < pixelHisto->GetNbinsX(); channel++) {
-			
-			TH1D *channelHisto = new TH1D("", "", pixelHisto->GetNbinsY(), 0, pixelHisto->GetNbinsY());
+			else {
+				//yzHisto->SetMarkerStyle(kRed);
+				//yzHisto->Fill(it->z,it->y);
+				
+			}
 			
 		}
-		
-	}*/
-	
-	
+		xyzHisto->Write();
+		delete xyzHisto;
+	}	*/
 };
 
 void MapToPixels::find2DHits(const unsigned &t_runID,
- 				 const unsigned &t_subrunID,
+ 			     const unsigned &t_subrunID,
  			     const unsigned &t_eventID, 
  			     const std::vector<Hit> &t_rawHits,
 			     std::vector<Hit2d> &t_pixelHits,
-		         std::multimap<double, Hit2d> &t_pixelHitOrder,
-	             std::vector<Hit2d> &t_roiHits,
-                 std::multimap<double, Hit2d> &t_roiHitOrder,
+		             std::multimap<double, Hit2d> &t_pixelHitOrder,
+	             	     std::vector<Hit2d> &t_roiHits,
+                 	     std::multimap<double, Hit2d> &t_roiHitOrder,
 			     std::multimap<double, Hit> &t_dataHitOrder) {
 					 
 	///Take the given input event data hits and order according to x component 
@@ -297,49 +267,21 @@ void MapToPixels::find2DHits(const unsigned &t_runID,
 		///Digitization speed is in ns, drift speed is in us
 		double x_compInSamples = (1000*it.x)/(pixelCoordinates.getDigitizationSpeed()*pixelCoordinates.getDriftSpeed()); 
 		t_dataHitOrder.insert( std::pair<double, Hit>(x_compInSamples, it) );
-		//indWidth = indWidth + it.indHitWidth;
-		//colWidth = colWidth + it.colHitWidth;
-		//n++;
-		
 	}
-	//std::cout << "AVERAGE INDUCTION PULSE WIDTH: " << indWidth/n << std::endl;
-	//std::cout << "AVERAGE COLLECTION PULSE WIDTH: " << colWidth/n << std::endl;
-	/*for(auto it = t_dataHitOrder.begin(); it != t_dataHitOrder.end(); it++){
-			std::cout << it->first << "  " << it->second.x << "  " << it->second.z << "  " << it->second.y << "  "  << it->second.colHitPeakTime << "  " << it->second.colHitWidth << "  " << it->second.colHitADC << "  " 
-					<< it->second.indHitPeakTime << "  "  << it->second.indHitWidth << "  " << it->second.indHitADC << std::endl;
-	}
-	std::cout << std::endl;*/
-	
-	//std::cout << "PCB Origin: " << "Z ---> " << pixelCoordinates.getPCBOrigin().at(0) << "  Y ----> " << pixelCoordinates.getPCBOrigin().at(1) << std::endl;
 	
 	///Convert coordinates relative to PCB origin (y, z)
 	for(auto iter = t_dataHitOrder.begin(); iter != t_dataHitOrder.end(); iter++){
 		convertToPCBCoordinates(iter->second.z, iter->second.y);
 	}
-	/*for(auto it = t_dataHitOrder.begin(); it != t_dataHitOrder.end(); it++){
-		if(it->first > 2800 || it->first < 0 && t_eventID == 4987) { std::cout << it->first << "  " << it->second.x << "  " << it->second.y << "  " << it->second.z << "  "  << it->second.colHitPeakTime << "  " << it->second.colHitWidth << "  " << it->second.colHitADC << "  " 
-			<< it->second.indHitPeakTime << "  "  << it->second.indHitWidth << "  " << it->second.indHitADC << std::endl;}
-	}
-	std::cout << std::endl;	*/
 	
 	///Convert YZ coordinates to units of pixel pitch
 	///std::cout << "In units of pixel pitch\n";
 	for(auto it = t_dataHitOrder.begin(); it != t_dataHitOrder.end(); it++) {
 		convertYZToPixelUnits(it->second.z, it->second.y);
-	}
-	/*for(auto it = t_dataHitOrder.begin(); it != t_dataHitOrder.end(); it++){
-		if (it->first < 0 && t_eventID == 4987) {std::cout << it->first << "  " << it->second.x << "  " << it->second.y << "  " << it->second.z << "  "  << it->second.colHitPeakTime << "  " << it->second.colHitWidth << "  " << it->second.colHitADC << "  " 
-				<< it->second.indHitPeakTime << "  "  << it->second.indHitWidth << "  " << it->second.indHitADC << std::endl;}
-	}
-	std::cout << std::endl;*/	
+	}	
 	
 	///Convert YZ coordinates to ROI IDs
 	convertYZToROIandPixelIDs(t_dataHitOrder, t_roiHits, t_roiHitOrder, t_pixelHits, t_pixelHitOrder);
-
-	/*for(auto iter = t_dataHitOrder.begin(); iter != t_dataHitOrder.end(); iter++){
-		std::cout << iter->first << "  " <<iter->second.first << "  " << iter->second.second << "       " << abs(fmod(iter->second.first, 8)) << "  " << abs(fmod(iter->second.second, 15)) << std::endl;
-	}
-	std::cout << std::endl;*/
 
 };
 
@@ -405,11 +347,6 @@ void MapToPixels::convertYZToROIandPixelIDs(const std::multimap<double, Hit> &t_
 			pixelHit.colHitADC = it->second.colHitADC;
 			t_pixelHits.push_back(pixelHit);
 			t_pixelHitOrder.insert( std::pair<double, Hit2d>(it->first, pixelHit) );
-			//std::cout << "Time " << it->first << "    Y: " << it->second.y << "     Z: " << it->second.z << std::endl;
-			//std::cout << "Is matched to ROI #" << roiID  << "    Pixel #" << pixelHit.channel << std::endl;
-			//std::cout << it->first << "  " << it->second.y << "  " << it->second.z << std::endl;//"       " << abs(fmod(it->second.y, 8)) << "  " << abs(fmod(it->second.z, 15)) << std::endl;
-			//std::cout << "Pixel channel is: " << pixelHit.channel << " \n";
-			//std::cout << "ROI channel is: " << roiHit.channel << "\n\n";
 		}
 	}
 };

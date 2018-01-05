@@ -59,6 +59,18 @@ class PixelCoordinates {
 			return roiPeakDifference;
 		}
 
+		double getTPCLength() const {
+			return tpcLength;
+		}
+
+		double getTPCWidth() const {
+                        return tpcWidth;
+                }
+
+		double getTPCHeight() const {
+                        return tpcHeight;
+                }
+
 		std::vector<double> getTPCOrigin() const {
 			return tpcOrigin;
 		}
@@ -128,6 +140,12 @@ class PixelCoordinates {
 		double hitDisc;
 		
 		double roiPeakDifference;
+
+		double tpcLength;
+
+		double tpcWidth;
+
+		double tpcHeight;
 
 		std::vector<double> tpcOrigin;
 

@@ -39,24 +39,19 @@ int main(int argc, char** argv) {
 		std::cerr << "ERROR: Failed to find histo!" << std::endl;
 	        exit(1);
 	}
-/*	TFile noiseData("/home/hunter/projects/mapiX/data/NoiseData.root", "RECREATE");
-	noiseHisto->Write();
-	noiseData.Close();*/
 	
 	///Map the coordinates to the pixels and ROI
 	MapToPixels mapToPixels(inputData, pixelCoordinates, noiseHisto);
 	mapToPixels.map();
-/*
-	std::cout << std::endl;
-	std::cout << "PCB side width: " << pixelCoordinates.getPCBSideWidth() << std::endl;
-	std::cout << "Pixel region width: " << pixelCoordinates.getPixelRegionWidth() << std::endl;
-	std::cout << "Pixel region height: " << pixelCoordinates.getPixelRegionHeight() << std::endl; 
-	std::cout << "PCB origin is: " << pixelCoordinates.getPCBOrigin().at(0) << "  " << pixelCoordinates.getPCBOrigin().at(1) << std::endl;
-	std::cout << "Drift speed: " << pixelCoordinates.getDriftSpeed() << std::endl;
-	std::cout << "Digitization speed: " << pixelCoordinates.getDigitizationSpeed() << std::endl;
-	std::cout << "Number of samples: " << pixelCoordinates.getNSamples() << std::endl;
-	std::cout << "Y limit: " << -1*(pixelCoordinates.getPixelRegionHeight() - pixelCoordinates.getPixelPitch()/2)/pixelCoordinates.getPixelPitch() << std::endl;
-	std::cout << "Z limit: " << (pixelCoordinates.getPixelRegionWidth() - pixelCoordinates.getPixelPitch()/2)/pixelCoordinates.getPixelPitch() <<  std::endl;
-	*/
+
+	///Run python script to make xyz plots, because root is very annoying about this plot
+	std::cout << "\nRunning python scripts for 3D event displays..." << std::endl;
+	std::string command1 = "python ../scripts/xyzPlot.py " + std::to_string(pixelCoordinates.getTPCLength()) + " " + std::to_string(pixelCoordinates.getTPCHeight()) + " " + std::to_string(pixelCoordinates.getTPCWidth());
+	system(command1.c_str());
+
+	///Run GUI
+	std::cout << "\nRunning Event Display... " << std::endl;
+	std::string command2 = "root -l ../scripts/MapixEventDisplay.C";
+	system(command2.c_str());
 }
 

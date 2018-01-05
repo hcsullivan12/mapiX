@@ -39,7 +39,11 @@ PixelCoordinates::PixelCoordinates(const std::string pixelCoordinatesFileName) {
 	widthOfPixelPulse    = getJsonMember("widthOfPixelPulse", rapidjson::kNumberType).GetDouble(); 
 	widthOfROIPulse      = getJsonMember("widthOfROIPulse", rapidjson::kNumberType).GetDouble(); 
 	hitDisc              = getJsonMember("hitDisc", rapidjson::kNumberType).GetDouble(); 
-	roiPeakDifference    = getJsonMember("roiPeakDifference", rapidjson::kNumberType).GetDouble(); 
+	roiPeakDifference    = getJsonMember("roiPeakDifference", rapidjson::kNumberType).GetDouble();
+	
+	tpcLength    = getJsonMember("tpcLength", rapidjson::kNumberType).GetDouble();
+	tpcWidth    = getJsonMember("tpcWidth", rapidjson::kNumberType).GetDouble();
+	tpcHeight    = getJsonMember("tpcHeight", rapidjson::kNumberType).GetDouble();
 	
 	pcbOrigin.push_back(pcbSideWidth + pixelPitch/2);            //z
 	pcbOrigin.push_back(pixelRegionHeight/2 - pixelPitch/2);     //y
