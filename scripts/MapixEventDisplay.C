@@ -16,6 +16,7 @@ public:
    MyMainFrame(const TGWindow *p,UInt_t w,UInt_t h);
    virtual ~MyMainFrame();
    void DoDraw();
+   char GetEvents();
 };
 MyMainFrame::MyMainFrame(const TGWindow *p,UInt_t w,UInt_t h) {
    // Create a main frame
@@ -44,6 +45,7 @@ MyMainFrame::MyMainFrame(const TGWindow *p,UInt_t w,UInt_t h) {
    vhframe1->AddFrame(goTo, new TGLayoutHints(kLHintsLeft,0,5,2,2) );
 
    TGListBox *listbox = new TGListBox(vhframe1, 100, 100);
+   char events = GetEvents();
    char tmp[10];
    for (int i = 0; i < 10; ++i) {
       sprintf(tmp, "Event %i", i+1);
@@ -121,6 +123,39 @@ void MyMainFrame::DoDraw() {
    TCanvas *fCanvas = fEcanvas->GetCanvas();
    fCanvas->cd();
    fCanvas->Update();
+}
+char MyMainFrame::GetEvents() {
+   // Open the file containing the histograms
+   TFile *f = new TFile("../output/Histograms.root", "READ");
+   if (!f->IsOpen()) {
+   	std::cout << "Error. Cannot open histogram file.\n";
+    	exit(1) ;
+   }
+
+   TList *list = f->GetListOfKeys() ;
+   if (!list) { 
+	printf("Error. No keys found in file\n"); 
+	exit(1); 
+   }
+   TIter next(list);
+   TKey *key;
+   TObject *obj;
+    
+   std::vector<std::string> eventNames;
+  
+   while ( (key = (TKey*)next()) ) {
+    	obj = key->ReadObj();
+    	if ( (strcmp(obj->IsA()->GetName(),"TProfile")!=0) && (!obj->InheritsFrom("TH2")) ) {
+      		printf("<W> Object %s is not 1D or 2D histogram : " " will not be converted\n",obj->GetName()) ;
+    	}
+	eventNames.push_back( obj->GetName()  );
+	std::cout << obj->GetName() << std::endl;
+    	//printf("Histo name:%s title:%s\n",obj->GetName(),obj->GetTitle());
+   }
+   
+   char h = 'a';
+   return h;
+
 }
 MyMainFrame::~MyMainFrame() {
    // Clean up used widgets: frames, buttons, layout hints
